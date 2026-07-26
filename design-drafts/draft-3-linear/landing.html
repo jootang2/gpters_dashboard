@@ -1,0 +1,184 @@
+<!-- omd-draft: reference=linear.app, archetype=center-text (dark minimal), tone=미니멀 프로덕트형 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPTers × Claude Code — 반복 업무 자동화 AI팀 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#08090a; --panel:#0f1011; --surface:#191a1b; --surface2:#28282c;
+    --fg:#f7f8f8; --text2:#d0d6e0; --muted:#8a8f98; --muted2:#62666d;
+    --brand:#5e6ad2; --accent:#7170ff; --accent-hover:#828fff;
+    --border:rgba(255,255,255,.08); --border-subtle:rgba(255,255,255,.05);
+    --radius-sm:6px; --radius-md:8px; --radius-lg:12px; --pill:9999px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--canvas);color:var(--fg);font-family:"Inter","Noto Sans KR",-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:"Inter","Noto Sans KR",sans-serif;font-weight:510;letter-spacing:-0.02em;margin:0;}
+  .container-inner{max-width:880px;margin:0 auto;padding:0 24px;}
+  a{color:inherit;}
+
+  header{position:sticky;top:0;z-index:40;background:rgba(8,9,10,.72);backdrop-filter:blur(10px);border-bottom:1px solid transparent;transition:border-color .2s;}
+  header.scrolled{border-bottom-color:var(--border);}
+  .nav-row{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .logo-wordmark{font-family:"Inter",sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.02em;color:var(--fg);}
+  .logo-wordmark span{color:var(--accent);}
+  .nav-cta{display:inline-flex;align-items:center;height:32px;padding:0 16px;border-radius:var(--pill);background:#e5e5e6;color:#08090a;font-size:13px;font-weight:600;text-decoration:none;transition:background .15s;}
+  .nav-cta:hover{background:#fff;}
+
+  .hero{padding:104px 0 64px;text-align:center;background:
+    radial-gradient(ellipse 900px 460px at 50% -10%, rgba(94,106,210,.16), transparent 60%);}
+  .kicker{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px;font-size:13px;color:var(--muted);font-weight:500;}
+  .kicker b{color:var(--accent);}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;margin-bottom:26px;font-size:12px;font-weight:510;border-radius:var(--pill);background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+  .hero h1{font-size:clamp(30px,4.6vw,52px);line-height:1.12;letter-spacing:-0.02em;color:var(--fg);}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--brand),var(--accent-hover));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p.lead{max-width:460px;margin:22px auto 0;font-size:17px;color:var(--text2);}
+  .cta-row{margin-top:36px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 22px;border-radius:var(--pill);background:#e5e5e6;color:#08090a;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 1px 1px rgba(0,0,0,.07),0 3px 2px rgba(0,0,0,.04);transition:background .15s,transform .15s;}
+  .btn-primary:hover{background:#fff;transform:translateY(-1px);}
+  .btn-secondary{display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:var(--pill);background:rgba(255,255,255,.05);color:var(--fg);font-size:15px;font-weight:510;text-decoration:none;box-shadow:0 0 0 1px var(--border-subtle) inset;transition:background .15s;}
+  .btn-secondary:hover{background:rgba(255,255,255,.08);}
+
+  .stat-band{padding:40px 0 8px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;}
+  .stat-cell{background:rgba(255,255,255,.02);padding:22px 12px;text-align:center;}
+  .stat-cell .label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;}
+  .stat-cell .value{font-size:14px;font-weight:600;color:var(--fg);}
+
+  .section{padding:64px 0;}
+  .section h2{font-size:26px;text-align:center;color:var(--fg);margin-bottom:10px;letter-spacing:-0.02em;}
+  .section .sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:44px;}
+  .sessions{display:flex;flex-direction:column;gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;}
+  .session-card{display:flex;gap:20px;padding:24px;background:rgba(255,255,255,.015);opacity:0;transform:translateY(10px);transition:background .2s;}
+  .session-card:hover{background:rgba(255,255,255,.035);}
+  [data-reveal]{animation:failsafeReveal .01s ease 2s forwards;}
+  html.js-ready [data-reveal]{animation:none;}
+  @keyframes failsafeReveal{to{opacity:1;transform:none;}}
+  .is-revealed{opacity:1 !important;transform:none !important;transition:opacity .5s ease,transform .5s ease;}
+  .session-num{flex:none;width:36px;height:36px;border-radius:var(--radius-sm);background:rgba(94,106,210,.15);border:1px solid rgba(113,112,255,.3);color:var(--accent-hover);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;}
+  .session-meta{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--accent-hover);font-weight:510;margin-bottom:4px;}
+  .session-meta .date{color:var(--muted2);font-weight:400;}
+  .session-title{font-size:15px;font-weight:510;color:var(--fg);margin-bottom:14px;}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:0 10px 0 5px;height:26px;border-radius:var(--pill);background:transparent;border:1px solid #23252a;color:var(--text2);}
+
+  footer{border-top:1px solid var(--border-subtle);background:var(--panel);color:var(--muted2);padding:36px 0;text-align:center;font-size:12px;}
+  footer a{text-decoration:none;color:var(--muted);}
+  footer a:hover{color:var(--fg);}
+  footer .sep{color:#3a3d42;margin:0 8px;}
+
+  @media(max-width:720px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .session-card{flex-direction:column;gap:12px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important;} .session-card{opacity:1;transform:none;} }
+</style>
+</head>
+<body>
+<header id="siteHeader">
+  <div class="container-inner nav-row">
+    <a href="#" class="logo-wordmark">GPTers <span>× Claude Code</span></a>
+    <a href="#cta" class="nav-cta">사전 진단하기</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container-inner">
+      <div class="kicker">GPTers <span style="color:var(--muted2)">×</span> <b>Claude Code</b></div>
+      <span class="badge">지피터스 AI 스터디 · 2026</span>
+      <h1>반복 업무는 그만,<br><em>Claude Code</em>로 내 업무<br>자동화 AI팀 만들기</h1>
+      <p class="lead">비개발자도 4주면 충분합니다. 매주 화요일 밤 9시, 함께 만들어요.</p>
+      <div class="cta-row" id="cta">
+        <a href="/survey" class="btn-primary">사전 진단하기 →</a>
+        <a href="#curriculum" class="btn-secondary">커리큘럼 보기</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stat-band">
+    <div class="container-inner">
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="label">기간</div><div class="value">7.21 – 8.11</div></div>
+        <div class="stat-cell"><div class="label">총 횟수</div><div class="value">4회</div></div>
+        <div class="stat-cell"><div class="label">일정</div><div class="value">화 밤 9~11시</div></div>
+        <div class="stat-cell"><div class="label">난이도</div><div class="value">입문</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="curriculum">
+    <div class="container-inner">
+      <h2>커리큘럼</h2>
+      <p class="sub">4주, 4개의 세션으로 완성하는 나만의 자동화 AI팀</p>
+      <div class="sessions">
+        <div class="session-card" data-reveal>
+          <div class="session-num">1</div>
+          <div>
+            <div class="session-meta"><span>Session 1</span><span class="date">7/21</span></div>
+            <div class="session-title">Claude Code 첫인상 &amp; 내 업무 지도 그리기</div>
+            <span class="chip">반복 업무 발굴 워크시트 · 첫 대화 예시 모음</span>
+          </div>
+        </div>
+        <div class="session-card" data-reveal>
+          <div class="session-num">2</div>
+          <div>
+            <div class="session-meta"><span>Session 2</span><span class="date">7/28</span></div>
+            <div class="session-title">첫 자동화 직접 만들기</div>
+            <span class="chip">CLAUDE.md 템플릿 · 프롬프트 설계 원칙 · 실습 예제 3개</span>
+          </div>
+        </div>
+        <div class="session-card" data-reveal>
+          <div class="session-num">3</div>
+          <div>
+            <div class="session-meta"><span>Session 3</span><span class="date">8/4</span></div>
+            <div class="session-title">에이전트 여러 개 = 내 AI팀 만들기</div>
+            <span class="chip">Fivemonkeys 케이스 스터디 · 에이전트 구조도 템플릿 · CLAUDE.md 분리 예시</span>
+          </div>
+        </div>
+        <div class="session-card" data-reveal>
+          <div class="session-num">4</div>
+          <div>
+            <div class="session-meta"><span>Session 4</span><span class="date">8/11</span></div>
+            <div class="session-title">내 AI팀 발표 &amp; 지속 운영 전략</div>
+            <span class="chip">발표 템플릿 · 지속 운영 체크리스트 · 트러블슈팅 가이드</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container-inner">
+    <span>지피터스(GPTers) AI 스터디</span><span class="sep">·</span>
+    <a href="https://www.gpters.org" target="_blank" rel="noopener noreferrer">gpters.org</a><span class="sep">·</span>
+    <span>by 송주환</span>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  document.documentElement.classList.add('js-ready');
+  var header=document.getElementById('siteHeader');
+  window.addEventListener('scroll',function(){
+    header.classList.toggle('scrolled', window.scrollY>8);
+  });
+  var els=document.querySelectorAll('[data-reveal]');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-revealed'); io.unobserve(e.target); } });
+    },{threshold:.15});
+    els.forEach(function(el){ io.observe(el); });
+  } else {
+    els.forEach(function(el){ el.classList.add('is-revealed'); });
+  }
+});
+</script>
+</body>
+</html>

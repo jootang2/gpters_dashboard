@@ -1,0 +1,23 @@
+{
+  "brand_id": "claude",
+  "brand_korean": "신뢰감 있는 실무형 (Claude/Anthropic 레퍼런스)",
+  "brand_category": "AI · Editorial",
+  "brand_color_hex": "#c96442",
+  "wow_rating": 6.5,
+  "hero_archetype": "center-text",
+  "live_inspect": { "ran": false, "raw_samples": 0, "method": "catalog-only (DESIGN.md 토큰 기반 수작업, live capture 미실행)" },
+  "round2_deltas": [
+    "미실행 — 단일 라운드 초안"
+  ],
+  "ip_compliance": {
+    "your_logo_placeholders": 1,
+    "your_product_name_placeholders": 0,
+    "brand_logo_embed_count": 0,
+    "verbatim_brand_copy": 0
+  },
+  "honest_gaps": [
+    "실제 Claude 사이트의 커스텀 서체(Anthropic Serif/Sans)는 라이선스 문제로 Noto Serif/Sans KR로 대체 — 무게감은 유사하나 글자 형태는 다름",
+    "일러스트/에디토리얼 이미지 요소 없음 — 텍스트와 카드 레이아웃만으로 구성",
+    "실제 사이트에서 자동 curl 검증한 CDN 자산 없음 (텍스트 전용 초안이라 이미지 자산 불필요)"
+  ]
+}

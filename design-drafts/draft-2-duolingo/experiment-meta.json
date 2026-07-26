@@ -1,0 +1,23 @@
+{
+  "brand_id": "duolingo",
+  "brand_korean": "친근한 커뮤니티형 (Duolingo 레퍼런스)",
+  "brand_category": "Education · Consumer",
+  "brand_color_hex": "#58cc02",
+  "wow_rating": 6.8,
+  "hero_archetype": "center-text (playful/gamified variant)",
+  "live_inspect": { "ran": false, "raw_samples": 0, "method": "catalog-only (DESIGN.md 토큰 기반 수작업, live capture 미실행)" },
+  "round2_deltas": [
+    "미실행 — 단일 라운드 초안"
+  ],
+  "ip_compliance": {
+    "your_logo_placeholders": 1,
+    "your_product_name_placeholders": 0,
+    "brand_logo_embed_count": 0,
+    "verbatim_brand_copy": 0
+  },
+  "honest_gaps": [
+    "Duolingo 특유의 마스코트(부엉이) 일러스트는 브랜드 자산이라 사용하지 않음 — 3D 버튼 lip 효과와 색상 팔레트만 차용",
+    "Feather Bold 커스텀 서체 대신 오픈소스 대체 서체 Nunito 사용 (레퍼런스 DESIGN.md에 명시된 공식 대체안)",
+    "게이미피케이션 요소(스트릭, XP 등)는 스터디 성격상 적용하지 않음 — 톤&버튼 스타일만 차용"
+  ]
+}

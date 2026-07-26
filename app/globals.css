@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — bootstrapped from linear.app (see DESIGN.md at project root).
+  Single source of truth: every page references these tokens instead of
+  hardcoding colors, so the whole app stays visually consistent.
+*/
+:root {
+  --background: #08090a;
+  --foreground: #f7f8f8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+
+  /* linear.app-derived brand tokens */
+  --color-canvas: #08090a;
+  --color-panel: #0f1011;
+  --color-surface: rgba(255, 255, 255, 0.05);
+  --color-surface-strong: rgba(255, 255, 255, 0.08);
+  --color-fg: #f7f8f8;
+  --color-text-secondary: #d0d6e0;
+  --color-muted: #8a8f98;
+  --color-muted-2: #62666d;
+  --color-brand: #5e6ad2;
+  --color-accent: #7170ff;
+  --color-accent-hover: #828fff;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-subtle: rgba(255, 255, 255, 0.05);
+  --color-error: #ff4b4b;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), -apple-system, "Noto Sans KR", Arial, Helvetica, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+/*
+  강의자료(/resources) 목차 앵커와 "마스터 프롬프트로 바로가기" CTA 가
+  부드럽게 스크롤되도록. 모션을 줄이도록 설정한 사용자에겐 적용하지 않는다.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

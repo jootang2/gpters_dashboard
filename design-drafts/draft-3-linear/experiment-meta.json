@@ -1,0 +1,23 @@
+{
+  "brand_id": "linear.app",
+  "brand_korean": "미니멀 프로덕트형 (Linear 레퍼런스)",
+  "brand_category": "Developer Tools · Productivity",
+  "brand_color_hex": "#5e6ad2",
+  "wow_rating": 6.6,
+  "hero_archetype": "center-text (dark minimal)",
+  "live_inspect": { "ran": false, "raw_samples": 0, "method": "catalog-only (DESIGN.md 토큰 기반 수작업, live capture 미실행)" },
+  "round2_deltas": [
+    "미실행 — 단일 라운드 초안"
+  ],
+  "ip_compliance": {
+    "your_logo_placeholders": 1,
+    "your_product_name_placeholders": 0,
+    "brand_logo_embed_count": 0,
+    "verbatim_brand_copy": 0
+  },
+  "honest_gaps": [
+    "기존 사이트가 이미 다크 배경(bg-gray-950)이라 대비가 draft-1/2보다 약함 — 실제로는 채도·타이포 트래킹 차이로 구분됨",
+    "Berkeley Mono(코드 폰트)는 이 랜딩에 적용 지점이 없어 미사용",
+    "Linear 특유의 Cmd+K 커맨드 팔레트 등 프로덕트 UI 요소는 랜딩 성격상 미적용"
+  ]
+}
