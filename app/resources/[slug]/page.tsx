@@ -19,8 +19,10 @@ import MarkdownView from '../MarkdownView'
 
 export const dynamicParams = false
 
+// externalPath 항목(md 파일이 없는 카드, 예: 시각화)은 상세 페이지를 만들지 않는다.
+// md 파일이 없으므로 이 항목까지 정적 생성하면 빌드가 깨진다.
 export function generateStaticParams() {
-  return MATERIALS.map((m) => ({ slug: m.slug }))
+  return MATERIALS.filter((m) => !m.externalPath).map((m) => ({ slug: m.slug }))
 }
 
 export async function generateMetadata({
@@ -54,7 +56,9 @@ export default async function MaterialDetailPage({
 }) {
   const { slug } = await params
   const material = getMaterial(slug)
-  if (!material) notFound()
+  // externalPath 항목은 md 파일이 없어 이 상세 페이지 대상이 아니다.
+  // (dynamicParams=false + generateStaticParams 에서 이미 제외되어 정상적으로는 여기 도달하지 않는다)
+  if (!material || !material.file) notFound()
 
   const markdown = await readMarkdown(material.file)
 

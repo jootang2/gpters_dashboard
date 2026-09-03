@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>서브에이전트 vs 에이전트 팀 — 구동 시각화</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#151922; --line:#242a36; --line2:#2f3746;
+    --tx:#e9edf5; --tx2:#9aa5b8; --tx3:#6b7688;
+    --orange:#ff6b35; --blue:#4a9eff; --green:#3ddc97; --purple:#b07cff; --red:#ff5470; --yellow:#ffc94a;
+    --stage-w:1120px; --stage-h:500px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--tx);
+    font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    -webkit-font-smoothing:antialiased; padding:22px 20px 40px; min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* ---------- 헤더 ---------- */
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.5px}
+  h1 span{color:var(--orange)}
+  .sub{color:var(--tx3);font-size:13px;margin-top:5px}
+  .tabs{display:flex;gap:8px}
+  .tab{
+    background:var(--panel);border:1px solid var(--line);color:var(--tx2);
+    padding:11px 20px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:700;
+    font-family:inherit;transition:.16s;
+  }
+  .tab:hover{border-color:var(--line2);color:var(--tx)}
+  .tab.on{background:var(--orange);border-color:var(--orange);color:#160b04}
+  .tab.on.team{background:var(--purple);border-color:var(--purple);color:#150a24}
+
+  /* ---------- 구조도 ---------- */
+  .schema{
+    background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    padding:16px 20px;margin-bottom:14px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;
+  }
+  .schema .lbl{font-size:11px;font-weight:800;color:var(--tx3);letter-spacing:1.5px;min-width:74px}
+  .schema pre{
+    font-family:'D2Coding','Consolas','Menlo',monospace;font-size:12px;line-height:1.62;
+    color:var(--tx2);white-space:pre;overflow-x:auto;flex:1
+  }
+  .schema pre b{color:var(--orange);font-weight:700}
+  .schema pre i{color:var(--purple);font-style:normal;font-weight:700}
+  .schema pre u{color:var(--red);text-decoration:none}
+
+  /* ---------- 스테이지 ---------- */
+  .stage-shell{
+    position:relative;background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    overflow:hidden;margin-bottom:12px;
+  }
+  .stage-scale{transform-origin:top left}
+  .stage{position:relative;width:var(--stage-w);height:var(--stage-h)}
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+  .node{
+    position:absolute;width:176px;border-radius:10px;padding:9px 11px 8px;
+    background:#1b212c;border:1.5px solid var(--line2);
+    opacity:0;transform:scale(.86) translateY(6px);transition:opacity .45s,transform .45s,border-color .3s,box-shadow .3s;
+  }
+  .node.show{opacity:1;transform:scale(1) translateY(0)}
+  .node.act{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,107,53,.13),0 0 22px rgba(255,107,53,.2)}
+  .node.act.t{border-color:var(--purple);box-shadow:0 0 0 3px rgba(176,124,255,.14),0 0 22px rgba(176,124,255,.22)}
+  .node .nm{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;letter-spacing:-.2px}
+  .node .dot{width:7px;height:7px;border-radius:50%;background:var(--tx3);flex:none}
+  .node .role{font-size:10.5px;color:var(--tx3);margin-top:3px;line-height:1.35;min-height:14px}
+  .node .ctx{margin-top:7px}
+  .node .ctx .cap{font-size:9px;color:var(--tx3);display:flex;justify-content:space-between;margin-bottom:3px;letter-spacing:.3px}
+  .node .bar{height:5px;background:#0e1219;border-radius:3px;overflow:hidden}
+  .node .fill{height:100%;width:0;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+  .node.user{width:132px;background:#11151d;border-style:dashed}
+  .node.user .nm{color:var(--tx)}
+  .node.store{width:150px;background:#131922}
+
+  .badge{
+    position:absolute;top:-9px;right:8px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;
+    letter-spacing:.4px;opacity:0;transition:.3s;
+  }
+  .badge.show{opacity:1}
+  .badge.own{background:#16324a;color:#8ecbff;border:1px solid #2a5b82}
+  .badge.sess{background:#2c1c48;color:#d3b4ff;border:1px solid #4d3378}
+
+  /* 패킷 */
+  .pk{
+    position:absolute;padding:4px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+    white-space:nowrap;pointer-events:none;z-index:30;
+    box-shadow:0 3px 14px rgba(0,0,0,.5);letter-spacing:-.2px;
+  }
+
+  /* 공유 태스크 보드 */
+  .board{
+    position:absolute;width:196px;border-radius:10px;background:#161c26;border:1.5px dashed var(--line2);
+    padding:9px 10px;opacity:0;transform:scale(.9);transition:opacity .45s,transform .45s,border-color .3s;
+  }
+  .board.show{opacity:1;transform:scale(1)}
+  .board.act{border-color:var(--yellow);box-shadow:0 0 20px rgba(255,201,74,.15)}
+  .board .bt{font-size:10px;font-weight:800;color:var(--yellow);letter-spacing:.8px;margin-bottom:7px}
+  .task{
+    font-size:10.5px;padding:4px 7px;border-radius:5px;background:#0f141c;border:1px solid #232b38;
+    margin-bottom:4px;color:var(--tx2);display:flex;justify-content:space-between;gap:6px;transition:.35s;
+  }
+  .task .who{font-size:9px;font-weight:800;opacity:0;transition:.35s}
+  .task.claimed{border-color:#3a4759;color:var(--tx)}
+  .task.claimed .who{opacity:1}
+  .task.done{opacity:.4;text-decoration:line-through}
+
+  /* X 마크 */
+  .xmark{
+    position:absolute;font-size:22px;font-weight:900;color:var(--red);opacity:0;
+    transition:.4s;z-index:25;text-shadow:0 0 12px rgba(255,84,112,.5)
+  }
+  .xmark.show{opacity:1}
+  .xnote{
+    position:absolute;font-size:10.5px;font-weight:700;color:var(--red);opacity:0;transition:.4s;
+    background:rgba(255,84,112,.1);border:1px solid rgba(255,84,112,.3);padding:3px 9px;border-radius:6px;z-index:25
+  }
+  .xnote.show{opacity:1}
+
+  /* 토큰 미터 */
+  .meter{
+    position:absolute;right:16px;top:14px;background:#11161f;border:1px solid var(--line);
+    border-radius:9px;padding:9px 12px;min-width:158px;z-index:20
+  }
+  .meter .mt{font-size:9.5px;color:var(--tx3);letter-spacing:1.1px;font-weight:800;margin-bottom:6px}
+  .meter .mv{font-size:22px;font-weight:800;letter-spacing:-1px;line-height:1}
+  .meter .mu{font-size:10px;color:var(--tx3);margin-left:3px;font-weight:600}
+  .meter .mbar{height:5px;background:#0b0e14;border-radius:3px;margin-top:7px;overflow:hidden}
+  .meter .mfill{height:100%;width:0;border-radius:3px;transition:width .6s}
+
+  /* ---------- 캡션 ---------- */
+  .caption{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--orange);
+    border-radius:11px;padding:13px 17px;margin-bottom:12px;min-height:74px;display:flex;gap:14px;align-items:flex-start
+  }
+  .caption.team{border-left-color:var(--purple)}
+  .caption .no{
+    font-size:11px;font-weight:800;color:#160b04;background:var(--orange);
+    padding:3px 9px;border-radius:5px;flex:none;margin-top:1px;letter-spacing:.5px
+  }
+  .caption.team .no{background:var(--purple);color:#150a24}
+  .caption .txt{font-size:14.5px;line-height:1.55;font-weight:600}
+  .caption .txt em{font-style:normal;color:var(--orange);font-weight:800}
+  .caption.team .txt em{color:var(--purple)}
+  .caption .txt small{display:block;margin-top:5px;font-size:12px;color:var(--tx3);font-weight:500;line-height:1.5}
+
+  /* ---------- 컨트롤 ---------- */
+  .ctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button.b{
+    background:#1b212c;border:1px solid var(--line2);color:var(--tx);padding:10px 16px;
+    border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:.15s
+  }
+  button.b:hover{background:#222a37;border-color:#3d4757}
+  button.b:disabled{opacity:.35;cursor:default}
+  button.b.play{background:var(--orange);border-color:var(--orange);color:#160b04;min-width:112px}
+  button.b.play.team{background:var(--purple);border-color:var(--purple);color:#150a24}
+  .steps{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+  .sdot{width:26px;height:5px;border-radius:3px;background:#222833;cursor:pointer;transition:.25s}
+  .sdot.on{background:var(--orange)}
+  .sdot.team.on{background:var(--purple)}
+  .sdot.past{background:#4a3325}
+  .sdot.team.past{background:#3a2a52}
+  .speed{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--tx3);font-weight:600}
+  .speed select{
+    background:#1b212c;border:1px solid var(--line2);color:var(--tx);border-radius:6px;
+    padding:6px 8px;font-family:inherit;font-size:12px;cursor:pointer
+  }
+  .hint{margin-top:11px;font-size:11.5px;color:var(--tx3);line-height:1.6}
+  .hint kbd{
+    background:#1b212c;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;
+    padding:1px 6px;font-family:monospace;font-size:11px;color:var(--tx2)
+  }
+
+  /* ---------- 요약 비교 ---------- */
+  .cmp{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px}
+  .cmp h2{font-size:15px;font-weight:800;margin-bottom:13px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-size:11px;color:var(--tx3);letter-spacing:.6px;font-weight:800;text-transform:uppercase}
+  th.o{color:var(--orange)} th.p{color:var(--purple)}
+  td:first-child{color:var(--tx3);font-weight:700;width:150px;font-size:12px}
+  tr:last-child td{border-bottom:none}
+  .kicker{
+    margin-top:15px;padding:12px 15px;background:#111620;border-radius:9px;
+    border-left:3px solid var(--yellow);font-size:13.5px;line-height:1.6;font-weight:600
+  }
+  .kicker b{color:var(--yellow)}
+  @media(max-width:760px){ .schema{flex-direction:column;align-items:flex-start} }
+
+  /* ---------- ③ 내 설정 모드 ---------- */
+  .tab.on.my{background:var(--green);border-color:var(--green);color:#04180f}
+  .caption.my{border-left-color:var(--green)}
+  .caption.my .no{background:var(--green);color:#04180f}
+  .caption.my .txt em{color:var(--green)}
+  .sdot.my.on{background:var(--green)} .sdot.my.past{background:#1e4536}
+  button.b.play.my{background:var(--green);border-color:var(--green);color:#04180f}
+
+  .loader{display:none;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+  .loader.on{display:block}
+  .loader h3{font-size:14px;font-weight:800;margin-bottom:4px}
+  .loader .lsub{font-size:12px;color:var(--tx3);line-height:1.6;margin-bottom:13px}
+  .loader .lsub b{color:var(--green)}
+  .drop{
+    border:2px dashed var(--line2);border-radius:11px;padding:26px 18px;text-align:center;
+    cursor:pointer;transition:.2s;background:#11151d
+  }
+  .drop:hover,.drop.over{border-color:var(--green);background:#101a16}
+  .drop .di{font-size:30px;margin-bottom:8px;opacity:.75}
+  .drop .dt{font-size:14px;font-weight:700}
+  .drop .dd{font-size:11.5px;color:var(--tx3);margin-top:6px;line-height:1.6}
+  .drop .dd code{background:#1b212c;padding:1px 5px;border-radius:4px;color:var(--tx2);font-size:11px}
+  /* 입력 방법 블록 */
+  .way{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:11px;background:#11151d}
+  .wt{font-size:13.5px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .wn{font-size:10px;font-weight:800;background:var(--line2);color:var(--tx2);
+    padding:2px 8px;border-radius:5px;letter-spacing:.5px}
+  .wbest{font-size:10px;font-weight:800;background:#0f2e22;color:var(--green);
+    border:1px solid #2a6b52;padding:2px 8px;border-radius:20px;letter-spacing:.3px}
+  .wd{font-size:12px;color:var(--tx3);line-height:1.65;margin-bottom:10px}
+  .wd b{color:var(--tx2)}
+  .wd code{background:#1b212c;padding:1px 5px;border-radius:4px;color:var(--tx2);font-size:11.5px}
+  .pgen{position:relative;margin-bottom:9px}
+  .pgen pre{
+    background:#0b0e14;border:1px solid var(--line2);border-radius:8px;padding:11px 13px;
+    font-family:'D2Coding','Consolas','Menlo',monospace;font-size:11.5px;line-height:1.6;
+    color:#d7dde8;white-space:pre-wrap;max-height:126px;overflow-y:auto
+  }
+  .pgen button{position:absolute;right:9px;top:9px}
+  .dhelp{
+    display:none;margin-top:10px;padding:11px 14px;border-radius:9px;
+    background:#1a1015;border-left:3px solid var(--red);font-size:12.5px;line-height:1.7;color:var(--tx2)
+  }
+  .dhelp.on{display:block}
+  .dhelp b{color:var(--red)}
+  .dhelp code{background:#1b212c;padding:1px 5px;border-radius:4px;color:var(--tx);font-size:11.5px}
+
+  .samples{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  .samples .sl{font-size:11px;color:var(--tx3);font-weight:700;margin-right:2px}
+  button.s{
+    background:#1b212c;border:1px solid var(--line2);color:var(--tx2);padding:7px 13px;border-radius:7px;
+    cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:.15s
+  }
+  button.s:hover{border-color:#3d4757;color:var(--tx)}
+  button.s.good:hover{border-color:var(--green);color:var(--green)}
+  button.s.bad:hover{border-color:var(--red);color:var(--red)}
+
+  .report{display:none;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 20px;margin-bottom:14px}
+  .report.on{display:block}
+  .rhead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .score{display:flex;align-items:baseline;gap:5px}
+  .score .sv{font-size:38px;font-weight:800;letter-spacing:-2px;line-height:1}
+  .score .sm{font-size:13px;color:var(--tx3);font-weight:700}
+  .rhead .verdict{font-size:13.5px;font-weight:700;line-height:1.5;flex:1;min-width:230px}
+  .rhead .files{font-size:11px;color:var(--tx3);margin-top:4px;font-weight:500}
+  button.b.re{margin-left:auto}
+
+  .issues{display:grid;gap:8px}
+  .iss{
+    display:flex;gap:11px;padding:11px 13px;border-radius:9px;background:#11161f;
+    border-left:3px solid var(--tx3);align-items:flex-start
+  }
+  .iss.crit{border-left-color:var(--red);background:#1a1015}
+  .iss.warn{border-left-color:var(--yellow);background:#191610}
+  .iss.info{border-left-color:var(--blue);background:#101620}
+  .iss.ok{border-left-color:var(--green);background:#0f1a15}
+  .iss .ic{font-size:15px;flex:none;line-height:1.35}
+  .iss .ib{flex:1}
+  .iss .it{font-size:13px;font-weight:800;margin-bottom:3px}
+  .iss .it span{font-size:10.5px;font-weight:700;color:var(--tx3);margin-left:6px;
+    background:#1b212c;padding:1px 6px;border-radius:4px}
+  .iss .id{font-size:12px;color:var(--tx2);line-height:1.55}
+  .iss .ix{font-size:11.5px;color:var(--tx3);margin-top:5px;line-height:1.55;
+    padding-left:9px;border-left:2px solid #262d3a}
+  .iss .ix b{color:var(--green)}
+  .iss code{background:#1b212c;border:1px solid #262d3a;padding:1px 6px;border-radius:4px;
+    font-family:'D2Coding','Consolas',monospace;font-size:11.5px;color:var(--tx)}
+  .iss.crit .it{color:var(--red)} .iss.warn .it{color:var(--yellow)}
+  .iss.info .it{color:var(--blue)} .iss.ok .it{color:var(--green)}
+
+  /* 스테이지 안 실패 표식 */
+  .node.dead{opacity:.5;filter:grayscale(1)}
+  .node.dead.show{opacity:.5}
+  .node .role{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:28px
+  }
+  .node.bad{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,84,112,.12),0 0 20px rgba(255,84,112,.2)}
+  .node .flag{
+    position:absolute;left:8px;bottom:-10px;font-size:9.5px;font-weight:800;padding:2px 7px;
+    border-radius:20px;opacity:0;transition:.3s;white-space:nowrap
+  }
+  .node .flag.show{opacity:1}
+  .flag.f-red{background:#3a1620;color:#ff8ba0;border:1px solid #6b2637}
+  .flag.f-yel{background:#3a2f10;color:#ffd77a;border:1px solid #6b552a}
+  .flag.f-grn{background:#0f2e22;color:#7fe8bb;border:1px solid #2a6b52}
+  .overload{
+    position:absolute;left:222px;top:300px;font-size:11.5px;font-weight:800;color:var(--red);
+    background:rgba(255,84,112,.1);border:1px solid rgba(255,84,112,.32);padding:5px 11px;border-radius:7px;
+    opacity:0;transition:.4s;z-index:26;max-width:250px;line-height:1.5
+  }
+  .overload.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>서브에이전트 <span>vs</span> 에이전트 팀 — 실제 구동 시각화</h1>
+      <div class="sub">Claude Code 스터디 3주차 · 같은 일감(회의록 3건)을 두 구조가 어떻게 다르게 처리하는가</div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" id="tabSub">① 서브에이전트</button>
+      <button class="tab team" id="tabTeam">② 에이전트 팀</button>
+      <button class="tab my" id="tabMy">③ 내 설정으로 돌려보기</button>
+    </div>
+  </header>
+
+  <!-- 구조도 -->
+  <div class="schema">
+    <div class="lbl" id="schemaLbl">구조도</div>
+    <pre id="schemaArt"></pre>
+  </div>
+
+  <!-- ③ 내 설정 불러오기 -->
+  <div class="loader" id="loader">
+    <h3>내가 만든 에이전트를 넣어보세요</h3>
+    <div class="lsub">
+      실습 폴더의 <code style="background:#1b212c;padding:1px 5px;border-radius:4px">.claude/agents/</code> 안 <code style="background:#1b212c;padding:1px 5px;border-radius:4px">.md</code> 파일들과 <code style="background:#1b212c;padding:1px 5px;border-radius:4px">CLAUDE.md</code>를 통째로 끌어다 놓으세요.
+      <b>파일은 어디로도 전송되지 않습니다</b> — 이 브라우저 안에서만 읽고 끝납니다. 인터넷을 꺼도 됩니다.
+    </div>
+    <!-- 1단계: export 폴더 만들기 -->
+    <div class="way">
+      <div class="wt"><span class="wn">1단계</span> export 폴더 만들기</div>
+      <div class="wd">
+        <code>.claude/</code> 는 점(.)으로 시작하는 <b>숨김 폴더</b>라 브라우저가 열어보지 못합니다.
+        아래 한 줄을 Claude Code에 붙여넣어, <b>숨김이 아닌 폴더로 복사</b>시키세요.
+      </div>
+      <div class="pgen">
+        <pre id="genPrompt">.claude/agents/ 안의 모든 .md 파일과 루트의 CLAUDE.md 를
+이 폴더 바로 아래 export/ 폴더에 그대로 복사해줘.
+내용은 하나도 바꾸지 말고 원본 그대로. 다 되면 파일 목록만 보여줘.</pre>
+        <button class="s" id="cpPrompt">📋 복사</button>
+      </div>
+    </div>
+
+    <!-- 2단계: md 파일 전부 선택 -->
+    <div class="way">
+      <div class="wt"><span class="wn">2단계</span> export 안의 <code style="font-size:12px">.md</code> 파일을 <b>전부</b> 넣기</div>
+      <div class="drop" id="drop">
+        <div class="di">📄📄📄</div>
+        <div class="dt">클릭해서 파일 고르기 &nbsp;·&nbsp; 또는 파일들을 끌어다 놓기</div>
+        <div class="dd">
+          클릭 → <code>export</code> 폴더 열기 → <b><code>Ctrl+A</code>(Mac은 <code>Cmd+A</code>)로 전부 선택</b> → 열기<br>
+          <b>폴더가 아니라 파일을 넣어야 합니다</b> — 폴더는 브라우저가 열어보지 못합니다
+        </div>
+        <input type="file" id="fin" multiple style="display:none">
+      </div>
+      <div class="dhelp" id="dropHelp">
+        ⚠ <b>.md 파일을 찾지 못했습니다.</b><br>
+        <b>폴더를 넣으신 건 아닌가요?</b> 폴더 말고 <b>그 안의 <code>.md</code> 파일들을 직접 선택</b>해야 합니다.<br>
+        드롭존을 클릭 → <code>export</code> 폴더로 들어가 → <code>Ctrl+A</code> 로 전부 선택 → 열기.
+      </div>
+    </div>
+
+    <div class="samples">
+      <span class="sl">파일이 아직 없다면 —</span>
+      <button class="s good" id="smpGood">✅ 잘 만든 예시로 보기</button>
+      <button class="s bad" id="smpBad">❌ 잘못 만든 예시로 보기</button>
+    </div>
+  </div>
+
+  <!-- 진단 리포트 -->
+  <div class="report" id="report">
+    <div class="rhead">
+      <div class="score"><span class="sv" id="scoreV">--</span><span class="sm">/ 100</span></div>
+      <div>
+        <div class="verdict" id="verdict"></div>
+        <div class="files" id="fileList"></div>
+      </div>
+      <button class="b re" id="btnRe">↺ 다른 파일로</button>
+    </div>
+    <div class="issues" id="issues"></div>
+  </div>
+
+  <!-- 스테이지 -->
+  <div class="stage-shell" id="shell">
+    <div class="stage-scale" id="scaler">
+      <div class="stage" id="stage">
+        <svg class="wires" id="wires" viewBox="0 0 1120 500" preserveAspectRatio="none"></svg>
+        <div class="meter">
+          <div class="mt" id="meterTitle">누적 토큰 사용</div>
+          <div><span class="mv" id="meterVal">0</span><span class="mu">단위</span></div>
+          <div class="mbar"><div class="mfill" id="meterFill"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 캡션 -->
+  <div class="caption" id="cap">
+    <div class="no" id="capNo">00</div>
+    <div class="txt" id="capTxt">재생을 누르면 시작합니다.</div>
+  </div>
+
+  <!-- 컨트롤 -->
+  <div class="ctrl">
+    <button class="b play" id="btnPlay">▶ 재생</button>
+    <button class="b" id="btnPrev">◀ 이전</button>
+    <button class="b" id="btnNext">다음 ▶</button>
+    <button class="b" id="btnReset">↺ 처음</button>
+    <div class="speed">
+      속도
+      <select id="spd">
+        <option value="1.6">빠르게</option>
+        <option value="2.6" selected>보통</option>
+        <option value="3.8">천천히</option>
+      </select>
+    </div>
+    <div class="steps" id="dots"></div>
+  </div>
+  <div class="hint">
+    <kbd>Space</kbd> 재생/일시정지 · <kbd>→</kbd> 다음 단계 · <kbd>←</kbd> 이전 단계 · <kbd>Tab</kbd> 구조 전환 · <kbd>R</kbd> 처음으로
+  </div>
+
+  <!-- 비교표 -->
+  <div class="cmp">
+    <h2>두 구조 정리</h2>
+    <table>
+      <tr><th></th><th class="o">서브에이전트</th><th class="p">에이전트 팀</th></tr>
+      <tr><td>만드는 법</td><td><code>/agents</code> · <code>.claude/agents/*.md</code></td><td>환경변수 켠 뒤 <b>자연어로 "팀원 3명 스폰해줘"</b></td></tr>
+      <tr><td>정체</td><td>한 세션 안의 작업자</td><td>각각이 <b>독립된 Claude Code 세션</b></td></tr>
+      <tr><td>서로 대화</td><td style="color:var(--red)">✕ 불가 — 관제탑에만 보고</td><td style="color:var(--green)">✓ 팀원끼리 직접 메시지</td></tr>
+      <tr><td>일 배분</td><td>관제탑이 전부 지시</td><td>공유 할일목록에서 <b>스스로 집어감</b></td></tr>
+      <tr><td>내가 개입</td><td>관제탑을 통해서만</td><td style="color:var(--green)">팀원에게 <b>직접 1:1 대화 가능</b></td></tr>
+      <tr><td>비용</td><td>낮음</td><td style="color:var(--red)">높음 — 인원수만큼 늘어남</td></tr>
+      <tr><td>상태</td><td>정식 기능</td><td style="color:var(--yellow)">실험 기능 (기본 꺼짐)</td></tr>
+      <tr><td>잘 맞는 일</td><td>조사·검색·요약처럼 <b>결과만</b> 필요한 일</td><td>서로 <b>반박·토론</b>이 필요한 일</td></tr>
+    </table>
+    <div class="kicker">
+      <b>한 줄 요약 —</b> 서브에이전트는 “결과만 갖고 와”, 에이전트 팀은 “너희끼리 싸워보고 결론 내와”.
+      대부분의 업무는 앞의 것으로 충분합니다. 뒤의 것은 <b>답이 하나로 안 정해지는 일</b>에만 꺼내 씁니다.
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   노드 좌표 / 구성
+============================================================ */
+const SUB_NODES = [
+  {id:'user', x:24,  y:206, cls:'user',  name:'👤 나',        role:'요청하는 사람', ctx:false},
+  {id:'main', x:222, y:196, cls:'',      name:'🗼 관제탑',     role:'메인 대화창 (내 책상)', ctx:true, color:'var(--orange)'},
+  {id:'a1',   x:552, y:44,  cls:'',      name:'📝 summarizer', role:'회의록 요약',    ctx:true, color:'var(--blue)'},
+  {id:'a2',   x:552, y:196, cls:'',      name:'✅ todo-picker', role:'할 일 추출',     ctx:true, color:'var(--blue)'},
+  {id:'a3',   x:552, y:348, cls:'',      name:'🔍 fact-checker',role:'모순점 점검',    ctx:true, color:'var(--blue)'},
+  {id:'notes',x:840, y:196, cls:'store', name:'📁 notes/',     role:'회의록 3건 (원본)', ctx:false}
+];
+const TEAM_NODES = [
+  {id:'user', x:24,  y:206, cls:'user',  name:'👤 나',        role:'요청하는 사람', ctx:false},
+  {id:'lead', x:210, y:196, cls:'',      name:'🗼 팀장',      role:'메인 세션', ctx:true, color:'var(--orange)'},
+  {id:'t1',   x:520, y:36,  cls:'',      name:'😀 optimist',  role:'밀어붙일 안을 주장', ctx:true, color:'var(--green)'},
+  {id:'t2',   x:520, y:356, cls:'',      name:'🧐 skeptic',   role:'근거 대며 반박',    ctx:true, color:'var(--red)'},
+  {id:'t3',   x:838, y:196, cls:'',      name:'🗂 organizer',  role:'합의/미합의 정리',  ctx:true, color:'var(--purple)'}
+];
+
+/* 연결선 */
+const SUB_WIRES = [
+  ['user','main'], ['main','a1'], ['main','a2'], ['main','a3'],
+  ['a1','notes'], ['a2','notes'], ['a3','notes']
+];
+const TEAM_WIRES = [
+  ['user','lead'], ['lead','t1'], ['lead','t2'], ['lead','t3'],
+  ['t1','t2'], ['t2','t3'], ['t1','t3']
+];
+
+/* ============================================================
+   시나리오
+============================================================ */
+const SUB_STEPS = [
+{ cap:'나는 <em>관제탑 하나</em>에게만 말합니다.', sub:'“회의록 3건 정리하고, 할 일 뽑고, 앞뒤 안 맞는 데 있나 봐줘”',
+  show:['user','main','notes'], act:['user'], ctx:{main:12}, tok:8,
+  pk:[{f:'user',t:'main',l:'요청',c:'var(--orange)'}] },
+
+{ cap:'관제탑이 판단합니다 — <em>이건 셋으로 나눌 일이다.</em>', sub:'.claude/agents/ 에 정의해둔 3명을 확인하고 각각을 띄웁니다.',
+  show:['user','main','notes','a1','a2','a3'], act:['main'], ctx:{main:18}, tok:14, badge:'own' },
+
+{ cap:'세 명이 <em>동시에</em> 출발합니다.', sub:'각자 자기 지시를 받고 자기 책상(별도 컨텍스트)에서 일을 시작합니다.',
+  show:['user','main','notes','a1','a2','a3'], act:['a1','a2','a3'], ctx:{main:20}, tok:22, badge:'own',
+  pk:[{f:'main',t:'a1',l:'요약해',c:'var(--blue)'},{f:'main',t:'a2',l:'할일 뽑아',c:'var(--blue)',d:120},{f:'main',t:'a3',l:'모순 찾아',c:'var(--blue)',d:240}] },
+
+{ cap:'각자 회의록 원본을 <em>자기 책상에서만</em> 펼칩니다.', sub:'파일 3건 × 3명 = 많은 양을 읽지만, 이 짐은 전부 각자의 책상에 쌓입니다. 내 책상은 그대로입니다.',
+  show:['user','main','notes','a1','a2','a3'], act:['a1','a2','a3','notes'], ctx:{main:20,a1:74,a2:66,a3:88}, tok:52, badge:'own',
+  pk:[{f:'notes',t:'a1',l:'회의록 3건',c:'var(--tx3)'},{f:'notes',t:'a2',l:'회의록 3건',c:'var(--tx3)',d:110},{f:'notes',t:'a3',l:'회의록 3건',c:'var(--tx3)',d:220}] },
+
+{ cap:'여기가 핵심 — <em>셋은 서로 말을 걸 수 없습니다.</em>', sub:'fact-checker가 모순을 찾아내도 summarizer에게 직접 알려줄 방법이 없습니다. 서로의 존재조차 모릅니다.',
+  show:['user','main','notes','a1','a2','a3'], act:['a1','a2','a3'], ctx:{main:20,a1:74,a2:66,a3:88}, tok:58, badge:'own', x:true },
+
+{ cap:'각자 <em>결과 한 장</em>만 관제탑에 반납합니다.', sub:'읽은 원문은 두고, 요약본만 돌아옵니다. 그래서 내 책상이 안 넘칩니다.',
+  show:['user','main','notes','a1','a2','a3'], act:['main'], ctx:{main:34,a1:74,a2:66,a3:88}, tok:64, badge:'own',
+  pk:[{f:'a1',t:'main',l:'요약본',c:'var(--green)'},{f:'a2',t:'main',l:'할일표',c:'var(--green)',d:120},{f:'a3',t:'main',l:'모순 3건',c:'var(--green)',d:240}] },
+
+{ cap:'일이 끝난 셋은 <em>사라집니다.</em>', sub:'그들이 읽은 원문·시행착오도 함께 사라집니다. 남는 건 결과 세 장뿐입니다.',
+  show:['user','main','notes'], act:['main'], ctx:{main:34}, tok:66 },
+
+{ cap:'관제탑이 셋을 합쳐 <em>나에게 한 번에</em> 보고합니다.', sub:'내 책상은 34%밖에 안 찼습니다. 혼자 다 했다면 90%를 넘겼을 일입니다.',
+  show:['user','main','notes'], act:['user','main'], ctx:{main:36}, tok:70,
+  pk:[{f:'main',t:'user',l:'종합 보고서',c:'var(--orange)'}] }
+];
+
+const TEAM_STEPS = [
+{ cap:'같은 회의록, 이번엔 <em>토론이 필요한 일</em>을 시킵니다.', sub:'“다음 분기에 뭘 할지 팀원 3명이 서로 반박하며 결론 내줘”',
+  show:['user','lead'], act:['user'], ctx:{lead:12}, tok:8,
+  pk:[{f:'user',t:'lead',l:'요청',c:'var(--orange)'}] },
+
+{ cap:'팀장이 먼저 <em>공유 할일목록</em>을 만듭니다.', sub:'누가 뭘 할지 미리 못 박지 않습니다. 목록만 걸어둡니다.',
+  show:['user','lead'], act:['lead'], ctx:{lead:16}, tok:14, board:true, boardAct:true },
+
+{ cap:'팀원 3명이 <em>각자 독립된 세션</em>으로 켜집니다.', sub:'서브에이전트와 결정적으로 다른 점 — 이들은 부하 직원이 아니라 각각이 온전한 Claude Code 한 개입니다.',
+  show:['user','lead','t1','t2','t3'], act:['t1','t2','t3'], ctx:{lead:16,t1:20,t2:20,t3:20}, tok:40, board:true, badge:'sess' },
+
+{ cap:'팀원들이 할 일을 <em>스스로 집어갑니다.</em>', sub:'팀장이 배정하지 않아도 각자 빈 태스크를 claim 합니다. 동시에 집으려 하면 자동으로 정리됩니다.',
+  show:['user','lead','t1','t2','t3'], act:['t1','t2','t3'], ctx:{lead:18,t1:46,t2:52,t3:30}, tok:66, board:true, boardAct:true, claim:[0,1,2], badge:'sess',
+  pk:[{f:'t1',t:'board',l:'집었다',c:'var(--green)'},{f:'t2',t:'board',l:'집었다',c:'var(--red)',d:130},{f:'t3',t:'board',l:'집었다',c:'var(--purple)',d:260}] },
+
+{ cap:'그리고 <em>서로 직접 싸우기 시작합니다.</em>', sub:'optimist의 주장을 skeptic이 반박합니다. 나를 거치지 않고, 팀장도 거치지 않고, 팀원끼리 직접 메시지가 오갑니다.',
+  show:['user','lead','t1','t2','t3'], act:['t1','t2'], ctx:{lead:18,t1:60,t2:68,t3:38}, tok:96, board:true, claim:[0,1,2], badge:'sess',
+  pk:[{f:'t1',t:'t2',l:'이 안으로 가자',c:'var(--green)'},{f:'t2',t:'t1',l:'7/21 회의록과 어긋남',c:'var(--red)',d:520},{f:'t1',t:'t2',l:'그건 미결이었어',c:'var(--green)',d:1040}] },
+
+{ cap:'나도 <em>팀원 한 명에게 직접</em> 말을 걸 수 있습니다.', sub:'↑↓ 로 skeptic을 고르고 Enter — “근거가 약해, 회의록에서 직접 인용해봐”. 서브에이전트로는 절대 못 하던 일입니다.',
+  show:['user','lead','t1','t2','t3'], act:['user','t2'], ctx:{lead:18,t1:62,t2:78,t3:38}, tok:112, board:true, claim:[0,1,2], badge:'sess', direct:true,
+  pk:[{f:'user',t:'t2',l:'근거를 더 대봐',c:'var(--yellow)',arc:true}] },
+
+{ cap:'organizer가 <em>둘의 논쟁을 지켜보다</em> 정리합니다.', sub:'합의된 것과 끝내 갈린 것을 나눕니다. 이 판단은 논쟁을 옆에서 봤기 때문에 가능합니다.',
+  show:['user','lead','t1','t2','t3'], act:['t3'], ctx:{lead:20,t1:64,t2:80,t3:72}, tok:138, board:true, claim:[0,1,2], done:[0,1], badge:'sess',
+  pk:[{f:'t1',t:'t3',l:'내 주장',c:'var(--green)'},{f:'t2',t:'t3',l:'내 반박',c:'var(--red)',d:200}] },
+
+{ cap:'팀장이 종합해 <em>나에게 최종 보고</em>합니다.', sub:'결과물이 다릅니다 — 목록이 아니라 <b>논쟁을 거쳐 살아남은 결론</b>입니다.',
+  show:['user','lead','t1','t2','t3'], act:['user','lead'], ctx:{lead:38,t1:64,t2:80,t3:72}, tok:152, board:true, claim:[0,1,2], done:[0,1,2], badge:'sess',
+  pk:[{f:'t3',t:'lead',l:'정리본',c:'var(--purple)'},{f:'lead',t:'user',l:'최종 결론',c:'var(--orange)',d:420}] },
+
+{ cap:'대신 <em>토큰을 2배 넘게</em> 씁니다.', sub:'서브에이전트 70 → 팀 152. 각 팀원이 온전한 세션이라 비용이 사람 수만큼 붙습니다. 그래서 아무 일에나 쓰지 않습니다.',
+  show:['user','lead','t1','t2','t3'], act:[], ctx:{lead:38,t1:64,t2:80,t3:72}, tok:152, board:true, claim:[0,1,2], done:[0,1,2], badge:'sess', cost:true }
+];
+
+const SCHEMA_SUB =
+`   [나]
+     │  요청 한 번
+     ▼
+ <b>[🗼 관제탑]</b> ──┬──▶ [📝 summarizer]  ──┐
+   메인 대화창   ├──▶ [✅ todo-picker]  ──┤ 각자 <b>자기 책상</b>에서 일하고
+                 └──▶ [🔍 fact-checker] ──┘ <b>결과 한 장만</b> 돌려줌
+                        <u>↑ 셋은 서로 대화 못 함 (✕) — 무조건 관제탑 경유</u>`;
+
+const SCHEMA_TEAM =
+`   [나] ──────────────┐  나도 팀원에게 <i>직접</i> 말 걸 수 있음
+     │                 ▼
+ <i>[🗼 팀장]</i>  ══╗   [😀 optimist] ⟷ [🧐 skeptic]
+   메인 세션    ║          ⟷   ⟷   ⟷
+                ╠══ <i>[📋 공유 할일목록]</i> ← 팀원이 <i>스스로 집어감</i>
+                ║          ⟷   ⟷   ⟷
+                ╚══   [🗂 organizer]
+   각 팀원 = <i>독립된 Claude Code 세션</i> · 서로 직접 메시지`;
+
+/* ============================================================
+   렌더링 엔진
+============================================================ */
+const stage=document.getElementById('stage'), wires=document.getElementById('wires');
+let mode='sub', idx=-1, playing=false, timer=null, nodeEls={}, boardEl=null, speed=2600;
+
+let MY={nodes:[],wires:[],steps:[],loaded:false};
+
+function nodeSet(){ return mode==='sub'?SUB_NODES : mode==='team'?TEAM_NODES : MY.nodes }
+function wireSet(){ return mode==='sub'?SUB_WIRES : mode==='team'?TEAM_WIRES : MY.wires }
+function stepSet(){ return mode==='sub'?SUB_STEPS : mode==='team'?TEAM_STEPS : MY.steps }
+function accent(){ return mode==='sub'?'var(--orange)' : mode==='team'?'var(--purple)' : 'var(--green)' }
+
+function stageH(){ return (mode==='my' && MY.h)?MY.h:500 }
+
+function build(){
+  stage.querySelectorAll('.node,.board,.xmark,.xnote,.pk,.overload').forEach(e=>e.remove());
+  wires.innerHTML=''; nodeEls={}; boardEl=null;
+  stage.style.height=stageH()+'px';
+  wires.setAttribute('viewBox','0 0 1120 '+stageH());
+
+  // 연결선
+  wireSet().forEach(([a,b])=>{
+    const A=pos(a), B=pos(b);
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',A.cx); ln.setAttribute('y1',A.cy);
+    ln.setAttribute('x2',B.cx); ln.setAttribute('y2',B.cy);
+    ln.setAttribute('stroke','#232a36'); ln.setAttribute('stroke-width','1.5');
+    ln.setAttribute('id','w-'+a+'-'+b);
+    if(mode==='team' && ['t1','t2','t3'].includes(a) && ['t1','t2','t3'].includes(b)){
+      ln.setAttribute('stroke','#2e3a4d'); ln.setAttribute('stroke-dasharray','5 4');
+    }
+    wires.appendChild(ln);
+  });
+  // 사용자→팀원 직통(점선, 팀 모드만)
+  if(mode==='team'){
+    const A=pos('user'), B=pos('t2');
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',`M ${A.cx} ${A.cy+26} C ${A.cx+60} ${470}, ${B.cx-160} ${478}, ${B.cx} ${B.cy+34}`);
+    p.setAttribute('fill','none'); p.setAttribute('stroke','#2a3242');
+    p.setAttribute('stroke-width','1.5'); p.setAttribute('stroke-dasharray','4 5'); p.setAttribute('id','w-direct');
+    wires.appendChild(p);
+  }
+
+  // 노드
+  nodeSet().forEach(n=>{
+    const d=document.createElement('div');
+    d.className='node '+n.cls; d.style.left=n.x+'px'; d.style.top=n.y+'px';
+    d.innerHTML=
+      `<div class="badge ${mode==='team'?'sess':'own'}" id="bdg-${n.id}">${mode==='team'?'독립 세션':'자기 책상'}</div>`+
+      `<div class="nm"><span class="dot" style="background:${n.color||'var(--tx3)'}"></span>${n.name}</div>`+
+      `<div class="role">${n.role}</div>`+
+      (n.ctx?`<div class="ctx"><div class="cap"><span>컨텍스트</span><span id="pct-${n.id}">0%</span></div>
+        <div class="bar"><div class="fill" id="fill-${n.id}" style="background:${n.color||'var(--blue)'}"></div></div></div>`:'')+
+      `<div class="flag" id="flg-${n.id}"></div>`;
+    stage.appendChild(d); nodeEls[n.id]=d;
+  });
+
+  // 공유 태스크 보드 (팀 모드)
+  if(mode==='team'){
+    boardEl=document.createElement('div');
+    boardEl.className='board'; boardEl.style.left='500px'; boardEl.style.top='188px';
+    boardEl.innerHTML=`<div class="bt">📋 공유 할일목록</div>
+      <div class="task" id="tk0"><span>아이디어 주장</span><span class="who" style="color:var(--green)">optimist</span></div>
+      <div class="task" id="tk1"><span>반박·검증</span><span class="who" style="color:var(--red)">skeptic</span></div>
+      <div class="task" id="tk2"><span>합의점 정리</span><span class="who" style="color:var(--purple)">organizer</span></div>`;
+    stage.appendChild(boardEl);
+  }
+
+  // 과부하 경고 (내 설정 모드)
+  if(mode==='my'){
+    const o=document.createElement('div'); o.className='overload'; o.id='ovl';
+    o.style.top=(stageH()-92)+'px';
+    stage.appendChild(o);
+  }
+
+  // X 마크 (서브 모드 — 에이전트끼리 대화 불가)
+  if(mode==='sub'){
+    [[636,148],[636,300]].forEach(([x,y],i)=>{
+      const m=document.createElement('div'); m.className='xmark'; m.id='xm'+i;
+      m.style.left=x+'px'; m.style.top=y+'px'; m.textContent='✕'; stage.appendChild(m);
+    });
+    const n=document.createElement('div'); n.className='xnote'; n.id='xnote';
+    n.style.left='548px'; n.style.top='452px'; n.textContent='서브에이전트끼리는 서로 메시지를 보낼 수 없다';
+    stage.appendChild(n);
+  }
+}
+
+function pos(id){
+  const n=nodeSet().find(v=>v.id===id);
+  if(id==='board') return {cx:598, cy:230};
+  const w = n.cls==='user'?132 : n.cls==='store'?150 : 176;
+  const h = n.ctx?92:56;
+  return {cx:n.x+w/2, cy:n.y+h/2, w, h};
+}
+
+function apply(i, animate){
+  const S=stepSet(); const st=S[i];
+  // 캡션
+  document.getElementById('capNo').textContent=String(i+1).padStart(2,'0');
+  document.getElementById('capTxt').innerHTML=st.cap+(st.sub?`<small>${st.sub}</small>`:'');
+  // 노드 표시/활성
+  nodeSet().forEach(n=>{
+    const el=nodeEls[n.id];
+    el.classList.toggle('show', st.show.includes(n.id));
+    el.classList.toggle('act', (st.act||[]).includes(n.id));
+    el.classList.toggle('t', mode==='team');
+    el.classList.toggle('dead', (st.dead||[]).includes(n.id));
+    el.classList.toggle('bad', (st.bad||[]).includes(n.id));
+    // 노드 하단 플래그
+    const fg=document.getElementById('flg-'+n.id);
+    if(fg){
+      const f=(st.flags||{})[n.id];
+      if(f && st.show.includes(n.id)){
+        fg.textContent=f.t; fg.className='flag show f-'+f.c;
+      } else { fg.className='flag'; }
+    }
+    const b=document.getElementById('bdg-'+n.id);
+    if(b) b.classList.toggle('show', !!st.badge && st.show.includes(n.id) && n.id!=='user' && n.id!=='notes' &&
+      (mode==='team' ? ['t1','t2','t3'].includes(n.id) : n.agent===true || ['a1','a2','a3'].includes(n.id)));
+    const f=document.getElementById('fill-'+n.id), p=document.getElementById('pct-'+n.id);
+    if(f){ const v=(st.ctx&&st.ctx[n.id])||0; f.style.width=v+'%'; p.textContent=v+'%';
+      p.style.color = v>70?'var(--red)': v>45?'var(--yellow)':'var(--tx3)'; }
+  });
+  // 보드
+  if(boardEl){
+    boardEl.classList.toggle('show', !!st.board);
+    boardEl.classList.toggle('act', !!st.boardAct);
+    [0,1,2].forEach(k=>{
+      const t=document.getElementById('tk'+k);
+      t.classList.toggle('claimed', (st.claim||[]).includes(k));
+      t.classList.toggle('done', (st.done||[]).includes(k));
+    });
+  }
+  // X 마크
+  if(mode==='sub'){
+    ['xm0','xm1'].forEach(id=>document.getElementById(id).classList.toggle('show', !!st.x));
+    document.getElementById('xnote').classList.toggle('show', !!st.x);
+  }
+  // 과부하 경고
+  const ov=document.getElementById('ovl');
+  if(ov){
+    if(st.ovl){ ov.innerHTML=st.ovl; ov.classList.add('show') } else { ov.classList.remove('show') }
+  }
+  // 직통 선
+  const dl=document.getElementById('w-direct');
+  if(dl){ dl.setAttribute('stroke', st.direct?'var(--yellow)':'#2a3242');
+          dl.setAttribute('stroke-width', st.direct?'2.2':'1.5'); }
+  // 팀원 간 선 강조
+  if(mode==='team'){
+    const hot = (st.act||[]).length>=2;
+    [['t1','t2'],['t2','t3'],['t1','t3']].forEach(([a,b])=>{
+      const l=document.getElementById('w-'+a+'-'+b); if(!l) return;
+      const on = hot && (st.act||[]).includes(a) && (st.act||[]).includes(b);
+      l.setAttribute('stroke', on?'var(--purple)':'#2e3a4d');
+      l.setAttribute('stroke-width', on?'2.2':'1.5');
+    });
+  }
+  // 토큰 미터
+  const max = mode==='sub'?160:160;
+  document.getElementById('meterVal').textContent=st.tok;
+  const mf=document.getElementById('meterFill');
+  mf.style.width=Math.min(100,(st.tok/max)*100)+'%';
+  mf.style.background = st.cost?'var(--red)': accent();
+  // 패킷
+  if(animate&&st.pk) st.pk.forEach(p=>setTimeout(()=>fire(p), p.d||0));
+  // 도트
+  document.querySelectorAll('.sdot').forEach((d,k)=>{
+    d.classList.toggle('on',k===i); d.classList.toggle('past',k<i);
+  });
+}
+
+function fire(p){
+  const A=pos(p.f), B=pos(p.t);
+  const el=document.createElement('div');
+  el.className='pk'; el.textContent=p.l;
+  el.style.background=p.c; el.style.color= p.c==='var(--tx3)'?'#fff':'#0d0f14';
+  el.style.left=A.cx+'px'; el.style.top=A.cy+'px';
+  el.style.transform='translate(-50%,-50%) scale(.7)'; el.style.opacity='0';
+  stage.appendChild(el);
+  requestAnimationFrame(()=>{
+    el.style.transition='opacity .2s'; el.style.opacity='1';
+    el.style.transform='translate(-50%,-50%) scale(1)';
+    requestAnimationFrame(()=>{
+      const dur=Math.max(.72, Math.min(1.5, speed/1000*.45));
+      el.style.transition=`left ${dur}s cubic-bezier(.4,0,.25,1), top ${dur}s cubic-bezier(.4,0,.25,1), opacity .3s ${dur*.72}s`;
+      el.style.left=B.cx+'px'; el.style.top=B.cy+'px'; el.style.opacity='0';
+      setTimeout(()=>el.remove(), dur*1000+400);
+    });
+  });
+}
+
+/* ---------- 컨트롤 ---------- */
+function buildDots(){
+  const c=document.getElementById('dots'); c.innerHTML='';
+  stepSet().forEach((_,k)=>{
+    const d=document.createElement('div');
+    d.className='sdot'+(mode==='team'?' team':mode==='my'?' my':'');
+    d.onclick=()=>{stop(); idx=k; apply(k,true)};
+    c.appendChild(d);
+  });
+}
+function next(){
+  const S=stepSet();
+  if(idx>=S.length-1){ stop(); return }
+  idx++; apply(idx,true);
+  if(playing) timer=setTimeout(next, speed);
+}
+function prev(){ stop(); if(idx>0){ idx--; apply(idx,false) } }
+function play(){
+  if(playing){ stop(); return }
+  if(idx>=stepSet().length-1) idx=-1;
+  playing=true; setPlayBtn(); next();
+}
+function stop(){ playing=false; clearTimeout(timer); setPlayBtn() }
+function setPlayBtn(){
+  const b=document.getElementById('btnPlay');
+  b.textContent= playing?'❚❚ 일시정지':'▶ 재생';
+  b.classList.toggle('team', mode==='team');
+  b.classList.toggle('my', mode==='my');
+}
+function reset(){ stop(); idx=-1; blank() }
+function blank(){
+  nodeSet().forEach(n=>{ nodeEls[n.id].classList.remove('show','act','dead','bad') });
+  if(boardEl) boardEl.classList.remove('show','act');
+  document.getElementById('capNo').textContent='00';
+  document.getElementById('capTxt').innerHTML=
+    mode==='sub' ? '재생을 누르면 <em>서브에이전트</em>가 실제로 도는 과정이 흐릅니다.<small>같은 일감을 3명이 나눠 처리하고, 결과만 돌려주는 구조입니다.</small>'
+  : mode==='team'? '재생을 누르면 <em>에이전트 팀</em>이 실제로 도는 과정이 흐릅니다.<small>독립 세션 3개가 서로 반박하며 결론을 만드는 구조입니다.</small>'
+  :                '재생을 누르면 <em>내가 만든 설정 그대로</em> 돌아갑니다.<small>잘 만든 곳은 잘 돌고, 잘못 만든 곳은 잘못 도는 게 그대로 보입니다.</small>';
+  document.getElementById('meterVal').textContent='0';
+  document.getElementById('meterFill').style.width='0';
+  document.querySelectorAll('.sdot').forEach(d=>d.classList.remove('on','past'));
+  ['xm0','xm1','xnote','ovl'].forEach(id=>{const e=document.getElementById(id); if(e)e.classList.remove('show')});
+  document.querySelectorAll('.flag').forEach(f=>f.className='flag');
+}
+function setMode(m){
+  stop(); mode=m; idx=-1;
+  document.getElementById('tabSub').classList.toggle('on', m==='sub');
+  document.getElementById('tabTeam').classList.toggle('on', m==='team');
+  document.getElementById('tabMy').classList.toggle('on', m==='my');
+  const cap=document.getElementById('cap');
+  cap.classList.toggle('team', m==='team'); cap.classList.toggle('my', m==='my');
+
+  document.getElementById('schemaArt').innerHTML = m==='sub'?SCHEMA_SUB : m==='team'?SCHEMA_TEAM : SCHEMA_MY;
+  document.getElementById('schemaLbl').textContent = m==='sub'?'① 서브에이전트' : m==='team'?'② 에이전트 팀' : '③ 내 설정';
+  document.getElementById('meterTitle').textContent = m==='sub'?'누적 토큰 사용 (기준)' : m==='team'?'누적 토큰 사용 (팀)' : '누적 토큰 사용 (내 설정)';
+
+  // ③ 모드는 파일을 넣기 전까지 무대를 감춥니다
+  const needLoad = (m==='my' && !MY.loaded);
+  document.getElementById('loader').classList.toggle('on', needLoad);
+  document.getElementById('report').classList.toggle('on', m==='my' && MY.loaded);
+  document.querySelector('.schema').style.display = needLoad?'none':'flex';
+  document.getElementById('shell').style.display = needLoad?'none':'block';
+  cap.style.display = needLoad?'none':'flex';
+  document.querySelector('.ctrl').style.display = needLoad?'none':'flex';
+  document.querySelector('.hint').style.display = needLoad?'none':'block';
+
+  document.querySelectorAll('.sdot').forEach(d=>{d.classList.toggle('my', m==='my'); d.classList.toggle('team', m==='team')});
+  if(!needLoad){ build(); buildDots(); blank(); fit(); }
+  setPlayBtn();
+}
+
+/* ============================================================
+   ③ 내 설정 — 파싱 → 진단 → 시나리오 생성
+============================================================ */
+const SCHEMA_MY =
+`   [나]
+     │
+     ▼
+ <b>[🗼 관제탑]</b> ──┬──▶ ?  내가 만든 에이전트가 여기 들어갑니다
+                 ├──▶ ?  <u>description이 약하면 화살표가 안 나갑니다</u>
+                 └──▶ ?  <u>도구를 열어두면 원본을 덮어씁니다</u>
+   내 .claude/agents/ 를 넣으면, 이 그림이 <b>내 설정 그대로</b> 다시 그려집니다`;
+
+function parseAgentFile(fname, text, lenient){
+  const t=text.replace(/^﻿/,'');
+  const m=t.match(/^\s*---\r?\n([\s\S]*?)\r?\n---/);
+  let fm, body, noFence=false;
+  if(m){
+    fm=m[1]; body=t.slice(m[0].length).trim();
+  } else {
+    // --- 가 없음. 터미널에 렌더된 화면을 복사하면 --- 가 수평선으로 바뀌어 사라집니다.
+    // 붙여넣기(lenient) 소스에서는 상단의 key: value 블록을 frontmatter로 간주합니다.
+    noFence=true;
+    if(!lenient) return {file:fname, loaded:false, why:'frontmatter'};
+    const lines=t.split('\n');
+    let end=0;
+    for(let i=0;i<lines.length;i++){
+      const ln=lines[i];
+      if(/^\s*$/.test(ln)){ if(end>0) break; continue }
+      if(/^[ \t]*[\w-]+[ \t]*:/.test(ln) || (end>0 && /^[ \t]+\S/.test(ln))) end=i+1;
+      else break;
+    }
+    if(!end) return {file:fname, loaded:false, why:'frontmatter'};
+    fm=lines.slice(0,end).join('\n');
+    body=lines.slice(end).join('\n').trim();
+  }
+  const get=k=>{
+    const re=new RegExp('^[ \\t]*'+k+'[ \\t]*:[ \\t]*(.*)$','mi'), r=re.exec(fm);
+    if(!r) return '';
+    let v=r[1].trim();
+    if(v==='' || v==='>' || v==='>-' || v==='|' || v==='|-'){ // 블록 스칼라 — 다음 들여쓴 줄들 이어붙이기
+      const after=fm.slice(r.index+r[0].length).split(/\r?\n/);
+      const buf=[];
+      for(const ln of after){ if(/^[ \t]+\S/.test(ln)) buf.push(ln.trim()); else break }
+      v=buf.join(' ');
+    }
+    return v.replace(/^["']|["']$/g,'').trim();
+  };
+  return {file:fname, loaded:true, name:get('name'), desc:get('description'),
+          tools:get('tools'), model:get('model'), body, fm, noFence, lenient:!!lenient};
+}
+
+const STOP=new Set(['사용','에이전트','때','것','및','수','이','그','저','합니다','한다','하는','대해','관련','요청','작업','정리','및','또는','the','a','to','for','and','of','when','use','used','this','that','agent']);
+function tokens(s){
+  return (s||'').toLowerCase().replace(/[^\wㄱ-ㅎ가-힣]+/g,' ').split(/\s+/)
+    .filter(w=>w.length>1 && !STOP.has(w));
+}
+function similarity(a,b){
+  const A=new Set(tokens(a)), B=new Set(tokens(b));
+  if(!A.size||!B.size) return 0;
+  let hit=0; A.forEach(w=>{ if(B.has(w)) hit++ });
+  return hit/Math.min(A.size,B.size);
+}
+
+function diagnose(agents, hasMd){
+  const iss=[]; const seen={};
+  agents.forEach(a=>{
+    a.status='ok'; a.note='';
+    if(!a.loaded){ a.status='fail'; a.note='로드 실패'; return }
+    if(!a.name){ a.status='fail'; a.note='이름 없음'; return }
+    if(seen[a.name]){ a.status='fail'; a.note='이름 중복' } else seen[a.name]=1;
+  });
+  // 트리거 강도
+  agents.forEach(a=>{
+    if(a.status!=='ok') return;
+    const d=a.desc||'';
+    if(!d){ a.status='notrig'; a.note='설명 없음'; return }
+    if(d.length<25){ a.status='notrig'; a.note='설명이 너무 짧음'; return }
+    const hasQuote=/["'“”'']/.test(d);
+    const hasWhen=/(때|경우|하면|요청|물어|when|use this)/i.test(d);
+    const listy=(d.match(/[,·]/g)||[]).length>=2;
+    if(!hasQuote && !hasWhen && !listy){ a.status='weak'; a.note='트리거 표현 없음' }
+  });
+  // 설명 겹침
+  for(let i=0;i<agents.length;i++) for(let j=i+1;j<agents.length;j++){
+    const A=agents[i],B=agents[j];
+    if(A.status==='fail'||B.status==='fail') continue;
+    if(similarity(A.desc,B.desc)>=.5){
+      if(A.status==='ok') A.status='dup'; if(B.status==='ok') B.status='dup';
+      A.note=A.note||'설명 겹침'; B.note=B.note||'설명 겹침';
+      iss.push({sev:'warn',t:'두 에이전트의 설명이 서로 겹칩니다',tag:`${A.name||A.file} ↔ ${B.name||B.file}`,
+        d:'설명이 비슷하면 관제탑이 누구를 불러야 할지 헷갈려, 요청이 엉뚱한 에이전트에게 갑니다.',
+        fix:'담당 영역이 안 겹치게 서로 다른 트리거 단어를 넣으세요. 예: 한쪽은 "요약·정리", 다른 쪽은 "할 일·담당자"처럼.'});
+    }
+  }
+  // 도구 개방
+  agents.forEach(a=>{
+    if(!a.loaded) return;
+    const noGuard=!/(수정\s*금지|건드리지|읽기\s*전용|변경하지|read[- ]?only|절대\s*쓰지)/.test((a.body||'')+(a.desc||''));
+    if(!a.tools){
+      iss.push({sev:'info',t:'도구 제한이 없습니다',tag:a.name||a.file,
+        d:'tools 칸을 비우면 이 에이전트는 모든 도구를 씁니다 — 파일 쓰기·삭제·명령 실행까지 전부 가능합니다.',
+        fix:'읽고 보고만 하면 되는 에이전트라면 <b>tools: Read, Glob, Grep</b> 으로 좁히세요.'});
+      if(noGuard && a.status==='ok'){ a.status='writer'; a.note='원본 수정 가능' }
+    } else if(/\b(write|edit|multiedit)\b/i.test(a.tools)){
+      if(noGuard){
+        if(a.status==='ok') a.status='writer';
+        a.note=a.note||'원본 수정 가능';
+        iss.push({sev:'warn',t:'원본을 덮어쓸 수 있습니다',tag:a.name||a.file,
+          d:'쓰기 도구(Write/Edit)를 가졌는데 본문에 "수정하지 말 것"이라는 규칙이 없습니다. 요약을 시켰는데 회의록 원본을 고쳐놓을 수 있습니다.',
+          fix:'쓰기 도구를 빼거나, 본문에 <b>"원본 파일은 절대 수정하지 않습니다"</b>를 명시하세요.'});
+      }
+    }
+  });
+  // 개별 상태 → 이슈
+  agents.forEach(a=>{
+    if(!a.loaded){
+      iss.push({sev:'crit',t:'이 파일은 에이전트로 인식되지 않습니다',tag:a.file,
+        d:'맨 위에 <code>---</code> 로 감싼 설정 부분(frontmatter)이 없습니다. Claude가 그냥 메모 파일로 봅니다.',
+        fix:'파일 첫 줄부터 <b>---</b> / <b>name:</b> / <b>description:</b> / <b>---</b> 순서로 넣으세요.'});
+    } else if(a.noFence && a.lenient){
+      iss.push({sev:'info',t:'붙여넣기라 <code>---</code> 구분선이 확인되지 않았습니다',tag:a.name||a.file,
+        d:'터미널 화면을 복사하면 <code>---</code> 가 수평선으로 렌더돼 사라집니다. 설정값은 읽어냈으니 아래 진단은 그대로 유효합니다.',
+        fix:'실제 파일에 <code>---</code> 가 제대로 있는지만 확인하세요. 확실히 보려면 파일을 내보내서 넣는 방법(방법 1-A)을 쓰면 됩니다.'});
+    }
+    if(a.loaded && !a.name){
+      iss.push({sev:'crit',t:'name이 비어 있습니다',tag:a.file,d:'부를 이름이 없어 호출 자체가 안 됩니다.',fix:'<b>name: summarizer</b> 처럼 영문 소문자 한 단어로 지으세요.'});
+    } else if(a.note==='이름 중복'){
+      iss.push({sev:'crit',t:'이름이 다른 파일과 겹칩니다',tag:a.name,d:'같은 이름이 둘이면 하나만 살아남습니다.',fix:'서로 다른 이름으로 바꾸세요.'});
+    } else if(a.status==='notrig'){
+      iss.push({sev:'crit',t:'설명이 부실해 호출되지 않습니다',tag:a.name,
+        d:`description이 ${a.desc?`"${a.desc}"`:'비어'} — 관제탑이 <b>언제 이 에이전트를 불러야 할지</b> 판단할 근거가 없습니다. 결과적으로 관제탑이 혼자 다 처리합니다.`,
+        fix:'어떤 말이 나오면 부르는지를 적으세요. 예: <b>회의록 요약이 필요할 때 사용. "요약", "정리", "무슨 얘기 나왔어" 같은 요청에 호출.</b>'});
+    } else if(a.status==='weak'){
+      iss.push({sev:'warn',t:'트리거 표현이 약합니다',tag:a.name,
+        d:'설명은 있지만 "언제 부르는지"가 없어 호출이 들쭉날쭉합니다. 될 때도 있고 안 될 때도 있는 게 이 경우입니다.',
+        fix:'설명 끝에 <b>"…같은 요청이 오면 호출"</b> 형태로 트리거 단어를 따옴표로 나열하세요.'});
+    }
+  });
+  if(!hasMd) iss.push({sev:'warn',t:'CLAUDE.md가 없습니다',tag:'폴더 규칙',
+    d:'교통정리 규칙이 없어 매번 관제탑의 즉흥 판단에 맡겨집니다. 같은 요청에도 결과가 달라집니다.',
+    fix:'폴더 맨 위에 <b>CLAUDE.md</b>를 두고 "어떤 요청 → 어떤 에이전트" 담당 표를 적으세요.'});
+  if(agents.length===0) iss.push({sev:'crit',t:'에이전트가 하나도 없습니다',tag:'.claude/agents/',
+    d:'나눌 사람이 없으니 관제탑이 전부 혼자 합니다. 내 책상이 금방 꽉 찹니다.',fix:'<code>/agents</code> 로 최소 2~3명을 만드세요.'});
+  if(agents.length>5) iss.push({sev:'info',t:`에이전트가 ${agents.length}명입니다`,tag:'인원',
+    d:'많다고 좋지 않습니다. 담당이 겹치기 시작하고 토큰만 늘어납니다.',fix:'3~5명이 적당합니다. 겹치는 담당은 합치세요.'});
+
+  const ok=agents.filter(a=>a.status==='ok').length;
+  if(ok && !iss.some(i=>i.sev==='crit')) iss.unshift({sev:'ok',t:`${ok}명이 제대로 호출됩니다`,tag:'정상',
+    d:'설명에 트리거가 들어 있어 관제탑이 알맞게 위임합니다.',fix:''});
+
+  let score=100;
+  iss.forEach(i=>{ score -= i.sev==='crit'?25 : i.sev==='warn'?12 : i.sev==='info'?4 : 0 });
+  return {iss, score:Math.max(0,Math.min(100,score))};
+}
+
+function buildMyScenario(agents, hasMd){
+  const N=agents.length;
+  const nodes=[
+    {id:'user',x:24,y:206,cls:'user',name:'👤 나',role:'요청하는 사람',ctx:false},
+    {id:'main',x:222,y:196,cls:'',name:'🗼 관제탑',role:hasMd?'CLAUDE.md 규칙 있음':'⚠ 라우팅 규칙 없음',ctx:true,color:'var(--orange)'}
+  ];
+  const gap = N<=1?0 : Math.max(118, Math.min(126, 404/(N-1)));
+  const top = N<=1?196 : Math.max(8, 232 - gap*(N-1)/2);
+  agents.forEach((a,i)=>{
+    const col = a.status==='ok'?'var(--blue)' : a.status==='writer'?'var(--yellow)' : a.status==='dup'?'var(--yellow)' : 'var(--red)';
+    const icon= a.status==='ok'?'🤖' : a.status==='fail'?'💀' : a.status==='writer'?'✏️' : '⚠️';
+    nodes.push({id:'m'+i, x:552, y:Math.round(N<=1?196:top+gap*i), cls:'', agent:true,
+      name:icon+' '+(a.name||a.file.replace(/\.md$/,'')),
+      role:(a.desc||'설명 없음').slice(0,30)+((a.desc||'').length>30?'…':''), ctx:true, color:col});
+  });
+  const stageH = Math.max(500, Math.round(top + gap*(N-1) + 150));
+  const midY = Math.round(stageH/2 - 54);
+  if(stageH>500){ nodes[1].y=midY; nodes[0].y=midY+10 }
+  nodes.push({id:'notes',x:840,y:stageH>500?midY:196,cls:'store',name:'📁 notes/',role:'회의록 3건 (원본)',ctx:false});
+
+  const wires=[['user','main']];
+  agents.forEach((a,i)=>{ wires.push(['main','m'+i]); wires.push(['m'+i,'notes']) });
+
+  const all=nodes.map(n=>n.id);
+  const good=agents.map((a,i)=>({a,i})).filter(o=>o.a.status==='ok'||o.a.status==='writer'||o.a.status==='dup');
+  const bad =agents.map((a,i)=>({a,i})).filter(o=>o.a.status==='fail'||o.a.status==='notrig'||o.a.status==='weak');
+  const writers=agents.map((a,i)=>({a,i})).filter(o=>o.a.status==='writer');
+  const dups=agents.map((a,i)=>({a,i})).filter(o=>o.a.status==='dup');
+
+  const flagsAll={};
+  agents.forEach((a,i)=>{
+    flagsAll['m'+i] =
+      a.status==='ok'     ? {t:'✓ 호출됨', c:'grn'} :
+      a.status==='writer' ? {t:'✏ 원본 수정 가능', c:'yel'} :
+      a.status==='dup'    ? {t:'⚠ 설명 겹침 — 오호출', c:'yel'} :
+      a.status==='fail'   ? {t:'✕ '+(a.note||'로드 실패'), c:'red'} :
+                            {t:'✕ 호출 안 됨 — '+(a.note||'설명 부실'), c:'red'};
+  });
+  const deadIds=bad.filter(o=>o.a.status!=='weak').map(o=>'m'+o.i);
+  const badIds =agents.map((a,i)=>({a,i})).filter(o=>['fail','notrig','weak','dup','writer'].includes(o.a.status)).map(o=>'m'+o.i);
+
+  const ctxOf=(v)=>{ const c={}; good.forEach(o=>c['m'+o.i]=v[0]); return c };
+  const S=[];
+
+  S.push({ cap:'같은 요청을 <em>내 설정</em>에 던져봅니다.',
+    sub:'“회의록 정리하고, 할 일 뽑고, 앞뒤 안 맞는 데 있나 봐줘”' + (hasMd?' · CLAUDE.md 규칙 있음 ✓':' · <b style="color:var(--red)">CLAUDE.md 없음 — 규칙 없이 즉흥 판단</b>'),
+    show:['user','main','notes'], act:['user'], ctx:{main:12}, tok:8,
+    pk:[{f:'user',t:'main',l:'요청',c:'var(--orange)'}] });
+
+  S.push({ cap:`관제탑이 내 에이전트 <em>${N}명</em>을 훑어봅니다.`,
+    sub:'각자의 description을 읽고 <b>누구를 부를지</b> 판단하는 순간입니다. 여기서 갈립니다.',
+    show:all, act:['main'], ctx:{main:16}, tok:14, flags:flagsAll, dead:deadIds, bad:badIds, badge:true });
+
+  if(good.length) S.push({ cap:`설명이 제대로 된 <em>${good.length}명</em>에게만 일이 갑니다.`,
+    sub: bad.length? `나머지 ${bad.length}명은 호출되지 않았습니다. 만들어둔 건 아무 의미가 없습니다.` : '전원 정상 호출 — 설명을 잘 쓰셨습니다.',
+    show:all, act:good.map(o=>'m'+o.i), ctx:Object.assign({main:18},ctxOf([26])), tok:14+good.length*8,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    pk:good.map((o,k)=>({f:'main',t:'m'+o.i,l:'일감',c:'var(--blue)',d:k*130})) });
+
+  if(dups.length) S.push({ cap:'설명이 겹친 쪽에 <em>엉뚱하게</em> 배달됩니다.',
+    sub:'관제탑이 둘을 구분하지 못해, 요약을 시켰는데 다른 에이전트가 받아갑니다. "가끔 이상하게 동작하는" 원인이 이겁니다.',
+    show:all, act:dups.map(o=>'m'+o.i), ctx:Object.assign({main:20},ctxOf([40])), tok:20+good.length*10,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    pk:dups.map((o,k)=>({f:'main',t:'m'+o.i,l:'잘못 배달됨',c:'var(--yellow)',d:k*160})) });
+
+  if(good.length) S.push({ cap:'호출된 에이전트가 <em>회의록을 읽습니다.</em>',
+    sub:'각자 자기 책상에서 읽습니다. 여기까지는 정상입니다.',
+    show:all, act:good.map(o=>'m'+o.i).concat(['notes']), ctx:Object.assign({main:20},ctxOf([72])), tok:24+good.length*16,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    pk:good.map((o,k)=>({f:'notes',t:'m'+o.i,l:'회의록 3건',c:'var(--tx3)',d:k*120})) });
+
+  if(writers.length) S.push({ cap:'그런데 <em>원본을 덮어씁니다.</em>',
+    sub:'쓰기 도구가 열려 있고 "수정 금지" 규칙이 없어서, 요약만 시켰는데 회의록 원본을 고쳐놓습니다. <b>되돌릴 수 없습니다.</b>',
+    show:all, act:writers.map(o=>'m'+o.i).concat(['notes']), ctx:Object.assign({main:20},ctxOf([76])), tok:34+good.length*16,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    ovl:'⚠ 원본 훼손 — notes/ 의 회의록이 덮어써졌습니다',
+    pk:writers.map((o,k)=>({f:'m'+o.i,t:'notes',l:'원본 덮어씀',c:'var(--red)',d:k*150})) });
+
+  const mainCtx = bad.length? Math.min(96, 34+bad.length*22) : 34;
+  S.push({ cap: bad.length? '호출 안 된 몫은 <em>관제탑이 떠안습니다.</em>' : '결과만 <em>관제탑으로</em> 돌아옵니다.',
+    sub: bad.length
+      ? `${bad.length}명이 놀고 있는 동안 관제탑이 그 일까지 직접 합니다. 원문이 전부 <b>내 책상</b>에 쌓입니다 — 나누려고 만든 게 무의미해진 상태입니다.`
+      : '읽은 원문은 각자 두고, 요약본만 옵니다. 관제탑 책상이 지켜집니다.',
+    show:all, act:['main'], ctx:Object.assign({main:mainCtx},ctxOf([76])), tok:(bad.length?58:40)+good.length*16+bad.length*24,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    ovl: bad.length? `⚠ 관제탑 컨텍스트 ${mainCtx}% — 위임 실패분을 직접 처리 중` : null,
+    pk:good.map((o,k)=>({f:'m'+o.i,t:'main',l:'결과',c:'var(--green)',d:k*120})) });
+
+  const grade = bad.length||writers.length||dups.length;
+  S.push({ cap: grade? '결론 — <em>지금 설정으로는 이렇게 돕니다.</em>' : '결론 — <em>설계대로 잘 돕니다.</em>',
+    sub: grade? '위 진단 카드의 <b>고치는 법</b>대로 수정한 뒤 다시 넣어보세요. 화살표가 어떻게 달라지는지 바로 보입니다.'
+              : '호출·분업·복귀가 전부 정상입니다. 이 상태로 실제 업무에 옮겨도 됩니다.',
+    show:all, act:['user','main'], ctx:Object.assign({main:mainCtx},ctxOf([76])), tok:(bad.length?70:48)+good.length*16+bad.length*24,
+    flags:flagsAll, dead:deadIds, bad:badIds, badge:true,
+    pk:[{f:'main',t:'user',l:grade?'절반만 된 보고서':'종합 보고서',c:grade?'var(--yellow)':'var(--green)'}] });
+
+  return {nodes, wires, steps:S, h:stageH};
+}
+
+function renderReport(agents, diag){
+  document.getElementById('report').classList.add('on');
+  const s=diag.score;
+  const sv=document.getElementById('scoreV');
+  sv.textContent=s;
+  sv.style.color = s>=80?'var(--green)' : s>=55?'var(--yellow)':'var(--red)';
+  document.getElementById('verdict').innerHTML =
+    s>=80? '잘 만들었습니다. 아래 재생을 눌러 <b>제대로 도는 모습</b>을 확인하세요.'
+    : s>=55? '반은 됩니다. 아래에서 <b>어디서 새는지</b> 보고 고쳐서 다시 넣어보세요.'
+    : '지금 이대로면 <b>대부분 관제탑이 혼자 처리합니다.</b> 만든 에이전트가 안 불립니다.';
+  document.getElementById('fileList').textContent =
+    `읽은 파일 ${agents.length}개 — ` + agents.map(a=>a.name||a.file).join(' · ');
+  const box=document.getElementById('issues'); box.innerHTML='';
+  const order={crit:0,warn:1,info:2,ok:3};
+  diag.iss.sort((a,b)=>order[a.sev]-order[b.sev]).forEach(i=>{
+    const ic= i.sev==='crit'?'🛑' : i.sev==='warn'?'⚠️' : i.sev==='info'?'💡':'✅';
+    const el=document.createElement('div'); el.className='iss '+i.sev;
+    el.innerHTML=`<div class="ic">${ic}</div><div class="ib">
+      <div class="it">${i.t}<span>${i.tag}</span></div>
+      <div class="id">${i.d}</div>
+      ${i.fix?`<div class="ix"><b>고치는 법</b> — ${i.fix}</div>`:''}</div>`;
+    box.appendChild(el);
+  });
+}
+
+function loadAgents(files){
+  const mds=files.filter(f=>/\.(md|markdown)$/i.test(f.name));
+  if(!mds.length){ showDropHelp(); return }
+  document.getElementById('dropHelp').classList.remove('on');
+  let hasMd=false; const agents=[]; let left=mds.length;
+  mds.forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const isRoot=/^claude\.md$/i.test(f.name);
+      if(isRoot) hasMd=true; else agents.push(parseAgentFile(f.name, r.result));
+      if(--left===0) finish();
+    };
+    r.onerror=()=>{ if(--left===0) finish() };
+    r.readAsText(f);
+  });
+  function finish(){
+    agents.sort((a,b)=>(a.file>b.file?1:-1));
+    const diag=diagnose(agents, hasMd);
+    const sc=buildMyScenario(agents, hasMd);
+    MY={...sc, loaded:true};
+    renderReport(agents, diag);
+    document.getElementById('loader').classList.remove('on');
+    setMode('my');
+  }
+}
+
+/* 샘플 */
+const SMP_GOOD=[
+ {name:'summarizer.md', text:`---
+name: summarizer
+description: 회의록 요약이 필요할 때 사용. "요약", "정리", "무슨 얘기 나왔어" 같은 요청이 오면 호출.
+tools: Read, Glob, Grep
+---
+당신은 회의록 요약 전문가입니다. notes/ 의 회의록을 읽고 핵심만 간추립니다.
+원본 파일은 절대 수정하지 않습니다.`},
+ {name:'todo-picker.md', text:`---
+name: todo-picker
+description: 할 일·담당자 추출이 필요할 때 사용. "할 일", "액션 아이템", "누가 뭐 하기로 했어" 같은 요청에 호출.
+tools: Read, Glob, Grep
+---
+회의록에서 할 일과 담당자만 뽑아 표로 정리합니다. 결정사항과 미결 안건을 구분합니다.
+원본 파일은 절대 수정하지 않습니다.`},
+ {name:'fact-checker.md', text:`---
+name: fact-checker
+description: 자료 간 모순 점검이 필요할 때 사용. "안 맞는", "모순", "앞뒤가 다른" 같은 요청에 호출.
+tools: Read, Glob, Grep
+---
+회의록끼리 어긋나는 부분을 찾아 보고합니다. 근거가 되는 파일명과 문장을 반드시 인용합니다.
+추측은 "추측"이라고 표시합니다. 원본 파일은 절대 수정하지 않습니다.`},
+ {name:'CLAUDE.md', text:`# 실습 폴더\n담당 표: 요약→summarizer / 할일→todo-picker / 모순→fact-checker`}
+];
+const SMP_BAD=[
+ {name:'summarizer.md', text:`---
+name: summarizer
+description: 요약 담당
+---
+회의록을 요약합니다.`},
+ {name:'helper.md', text:`---
+name: helper
+description: 이것저것 도와주는 에이전트입니다. 요약도 하고 정리도 하고 문서도 만듭니다.
+tools: Read, Write, Edit
+---
+필요한 걸 알아서 해줍니다.`},
+ {name:'checker.md', text:`name: checker
+description: 검사기
+
+회의록을 검사합니다. (--- 로 감싸는 걸 빠뜨린 파일)`}
+];
+function loadSample(set){
+  const files=set.map(s=>new File([s.text], s.name, {type:'text/markdown'}));
+  loadAgents(files);
+}
+
+/* 드롭존 */
+const drop=document.getElementById('drop'), fin=document.getElementById('fin');
+drop.onclick=()=>fin.click();
+fin.onchange=e=>loadAgents([...e.target.files]);
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>{
+  // 파일만 받습니다 (폴더 드롭은 지원하지 않음 — 아래 loadAgents 가 안내)
+  loadAgents([...(e.dataTransfer.files||[])]);
+});
+
+function showDropHelp(){
+  const h=document.getElementById('dropHelp');
+  h.classList.add('on');
+  h.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+/* 붙여넣기 → 가상 파일로 변환 */
+function parsePasted(text){
+  const t=text.replace(/\r\n/g,'\n').trim();
+  if(!t) return [];
+  const lines=t.split('\n');
+  const marks=[];
+  lines.forEach((ln,i)=>{
+    // === 파일명.md ===  /  ## 파일명.md  /  # 파일명.md  /  --- 파일명.md ---
+    let m=ln.match(/^\s*(?:={2,}|#{1,4}|-{2,}|\*{2})?\s*([\w.\-/\\]+\.(?:md|markdown))\s*(?:={2,}|-{2,}|\*{2})?\s*$/i);
+    if(m) marks.push({i, name:m[1].split(/[/\\]/).pop()});
+  });
+  if(!marks.length){
+    // 구분선이 없으면 통째로 파일 하나로 취급
+    return [new File([t], 'pasted.md', {type:'text/markdown'})];
+  }
+  const files=[];
+  marks.forEach((mk,k)=>{
+    const from=mk.i+1, to=(k+1<marks.length)?marks[k+1].i:lines.length;
+    let body=lines.slice(from,to).join('\n');
+    // 코드펜스로 감싸서 붙여넣은 경우 벗겨내기
+    body=body.replace(/^\s*```[\w]*\n/,'').replace(/\n```\s*$/,'').trim();
+    if(body) files.push(new File([body+'\n'], mk.name, {type:'text/markdown'}));
+  });
+  return files;
+}
+
+document.getElementById('cpPrompt').onclick=e=>{
+  const txt=document.getElementById('genPrompt').innerText;
+  const done=()=>{ e.target.textContent='✓ 복사됨'; setTimeout(()=>e.target.textContent='📋 복사',1800) };
+  if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(done).catch(fb);
+  else fb();
+  function fb(){
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done() }catch(_){ alert('복사 실패 — 직접 선택해 복사해주세요') }
+    ta.remove();
+  }
+};
+
+document.getElementById('smpGood').onclick=()=>loadSample(SMP_GOOD);
+document.getElementById('smpBad').onclick=()=>loadSample(SMP_BAD);
+document.getElementById('btnRe').onclick=()=>{
+  MY.loaded=false; document.getElementById('report').classList.remove('on');
+  fin.value=''; document.getElementById('dropHelp').classList.remove('on'); setMode('my');
+};
+
+document.getElementById('btnPlay').onclick=play;
+document.getElementById('btnNext').onclick=()=>{stop();next()};
+document.getElementById('btnPrev').onclick=prev;
+document.getElementById('btnReset').onclick=reset;
+document.getElementById('tabSub').onclick=()=>setMode('sub');
+document.getElementById('tabTeam').onclick=()=>setMode('team');
+document.getElementById('tabMy').onclick=()=>setMode('my');
+document.getElementById('spd').onchange=e=>{speed=parseFloat(e.target.value)*1000};
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();play()}
+  else if(e.code==='ArrowRight'){e.preventDefault();stop();next()}
+  else if(e.code==='ArrowLeft'){e.preventDefault();prev()}
+  else if(e.code==='Tab'){e.preventDefault();setMode(mode==='sub'?'team':'sub')}
+  else if(e.key==='r'||e.key==='R'){reset()}
+});
+
+/* 반응형 스케일 */
+function fit(){
+  const shell=document.getElementById('shell'), sc=document.getElementById('scaler');
+  const w=shell.clientWidth, k=Math.min(1, w/1120);
+  sc.style.transform=`scale(${k})`;
+  shell.style.height=(stageH()*k)+'px';
+}
+window.addEventListener('resize',fit);
+
+setMode('sub'); fit();
+</script>
+</body>
+</html>

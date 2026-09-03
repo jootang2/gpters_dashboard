@@ -167,7 +167,22 @@ function SessionMaterialsButton({
     )
   }
 
-  // 자료가 하나면 바로 그 문서로, 여러 개면 목록으로.
+  // 자료가 하나면 바로 그 자료로, 여러 개면 목록으로.
+  // 단, 그 하나가 externalPath 항목(md 상세 페이지가 없음)이면 /resources/[slug] 대신
+  // externalPath 를 새 탭으로 바로 연다 — 그렇지 않으면 존재하지 않는 상세 페이지로 보내 404가 난다.
+  if (items.length === 1 && items[0].externalPath) {
+    return (
+      <a
+        href={items[0].externalPath}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${className} text-accent border-accent/40`}
+      >
+        📎 추가 자료 →
+      </a>
+    )
+  }
+
   const href = items.length === 1 ? `/resources/${items[0].slug}` : '/resources'
 
   return (

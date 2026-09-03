@@ -47,43 +47,71 @@ export default function ResourcesPage() {
                   Session {session}
                 </h2>
                 <div className="space-y-3">
-                  {items.map((m) => (
-                    <div
-                      key={m.slug}
-                      className="backdrop-blur-sm bg-surface border border-line rounded-2xl p-5 hover:bg-surface-strong transition-colors"
-                    >
-                      <Link href={`/resources/${m.slug}`} className="block">
+                  {items.map((m) =>
+                    m.externalPath ? (
+                      // externalPath 항목: md 상세 페이지가 없으므로 카드 전체가 바로 그 경로를 새 탭으로 연다.
+                      <a
+                        key={m.slug}
+                        href={m.externalPath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block backdrop-blur-sm bg-surface border border-line rounded-2xl p-5 hover:bg-surface-strong transition-colors"
+                      >
                         <div className="flex items-center gap-2 mb-2">
                           {m.badge && (
                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand/20 border border-accent/40 text-accent">
                               {m.badge}
                             </span>
                           )}
-                          <span className="text-xs text-muted-2">.md</span>
+                          <span className="text-xs text-muted-2">🎬 시각화</span>
                         </div>
                         <p className="text-fg font-medium mb-1.5">{m.title}</p>
                         <p className="text-sm text-text-secondary leading-relaxed">
                           {m.description}
                         </p>
-                      </Link>
 
-                      <div className="mt-4 pt-3 border-t border-line flex items-center gap-4">
-                        <Link
-                          href={`/resources/${m.slug}`}
-                          className="text-xs text-accent hover:text-accent-hover transition-colors"
-                        >
-                          웹에서 읽기 →
+                        <div className="mt-4 pt-3 border-t border-line">
+                          <span className="text-xs text-accent">새 탭에서 열기 →</span>
+                        </div>
+                      </a>
+                    ) : (
+                      <div
+                        key={m.slug}
+                        className="backdrop-blur-sm bg-surface border border-line rounded-2xl p-5 hover:bg-surface-strong transition-colors"
+                      >
+                        <Link href={`/resources/${m.slug}`} className="block">
+                          <div className="flex items-center gap-2 mb-2">
+                            {m.badge && (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand/20 border border-accent/40 text-accent">
+                                {m.badge}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-2">.md</span>
+                          </div>
+                          <p className="text-fg font-medium mb-1.5">{m.title}</p>
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            {m.description}
+                          </p>
                         </Link>
-                        <a
-                          href={materialPublicPath(m)}
-                          download={m.file}
-                          className="text-xs text-muted-2 hover:text-text-secondary transition-colors"
-                        >
-                          📥 .md 다운로드
-                        </a>
+
+                        <div className="mt-4 pt-3 border-t border-line flex items-center gap-4">
+                          <Link
+                            href={`/resources/${m.slug}`}
+                            className="text-xs text-accent hover:text-accent-hover transition-colors"
+                          >
+                            웹에서 읽기 →
+                          </Link>
+                          <a
+                            href={materialPublicPath(m)}
+                            download={m.file}
+                            className="text-xs text-muted-2 hover:text-text-secondary transition-colors"
+                          >
+                            📥 .md 다운로드
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </section>
             ))}
