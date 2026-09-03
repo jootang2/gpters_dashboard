@@ -335,6 +335,7 @@ export default function HomePage() {
             참여자 현황 →
           </Link>
         </div>
+        <p className="mt-3 text-[11px] text-muted-2">최종 업데이트: 2026-09-04</p>
       </footer>
 
       {/* 자료 모달 */}
