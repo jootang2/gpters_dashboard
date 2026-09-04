@@ -59,6 +59,26 @@ import CurriculumSection from './CurriculumSection'
 // 새로 그려져야 한다(저장 직후 바로 반영되어야 하므로).
 export const dynamic = 'force-dynamic'
 
+/**
+ * 강의자료 자리에 붙는 실습 메모. 입력한 서식(들여쓰기·빈 줄·구분선)을 그대로
+ * 보여줘야 해서 배열이 아니라 한 덩어리 문자열로 둔다(화면은 whitespace-pre-wrap).
+ */
+const MATERIAL_NOTE = `\n테스트 : 로컬 PC에 있는 파일을 매일 자동화 해서 이메일 발송
+prod : 회사 PC
+==========
+1. 빈 apps script 프로젝트를 만들어서
+
+ 1-1. 메일 읽기
+ 1-2. 특정 키워드로 된 메일 읽기
+ 1-3 메일에 첨부파일 있으면 읽기
+ ==========
+
+2. 첨부파일에 대한 데이터로 작업
+ 2-1. 스프레드 시트에 작성 ( 처음에는 빈 스프레드 시트에 작성되는지 확인)
+ 2-2. 스프레드 시트 ID 넣어서 정말로 덮어씌워지는지, 아니면 append 되는 지 확인
+ 2-3. 우측에 수식도 같이 들어가지는지
+================`
+
 export default async function CostcoCoursePage() {
   const course = getCourse('costco')!
   const materials = course.materialSlugs
@@ -110,12 +130,14 @@ export default async function CostcoCoursePage() {
       {/* 일정표 — 표시와 관리자 편집을 클라이언트 컴포넌트가 맡는다 */}
       <CurriculumSection courseSlug="costco" initialBlocks={curriculum} />
 
-      {/* 강의자료 — 아직 올릴 자료가 없으면 '준비중'만 띄운다 */}
+      {/* 강의자료 — 등록된 자료가 없는 동안은 실습 메모(MATERIAL_NOTE)를 띄운다 */}
       <section className="px-6 pb-24 max-w-3xl mx-auto">
         <h2 className="text-2xl font-semibold tracking-tight mb-8 text-fg">강의자료</h2>
         {materials.length === 0 ? (
           <div className="backdrop-blur-sm bg-surface border border-line rounded-2xl p-6">
-            <p className="text-sm text-muted">준비중</p>
+            <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
+              {MATERIAL_NOTE}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
