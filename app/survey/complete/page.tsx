@@ -22,10 +22,10 @@ export default function CompletePage() {
               참여자 현황 보기 →
             </Link>
             <Link
-              href="/"
+              href="/courses/gpters"
               className="block w-full py-3 rounded-full border border-line text-text-secondary hover:bg-surface-strong transition-colors"
             >
-              홈으로 돌아가기
+              스터디 홈으로 돌아가기
             </Link>
           </div>
         </div>

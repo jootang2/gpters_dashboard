@@ -25,21 +25,21 @@
 
 | 토큰 | 값 | 용도 |
 |---|---|---|
-| `--color-canvas` | `#08090a` | 페이지 배경 (`bg-canvas`) |
-| `--color-panel` | `#0f1011` | select 등 서브 패널 배경 (`bg-panel`) — 예: `app/survey/page.tsx` 나이대 select |
-| `--color-surface` | `rgba(255,255,255,.05)` | 카드/입력창 배경 (`bg-surface`) |
-| `--color-surface-strong` | `rgba(255,255,255,.08)` | hover/active 배경 (`bg-surface-strong`) |
+| `--color-canvas` | `#14161a` | 페이지 배경 (`bg-canvas`) |
+| `--color-panel` | `#1c1f24` | select 등 서브 패널 배경 (`bg-panel`) — 예: `app/survey/page.tsx` 나이대 select |
+| `--color-surface` | `rgba(255,255,255,.06)` | 카드/입력창 배경 (`bg-surface`) |
+| `--color-surface-strong` | `rgba(255,255,255,.10)` | hover/active 배경 (`bg-surface-strong`) |
 | `--color-fg` | `#f7f8f8` | 기본 텍스트 (`text-fg`) |
 | `--color-text-secondary` | `#d0d6e0` | 본문/설명 텍스트 (`text-text-secondary`) |
 | `--color-muted` | `#8a8f98` | placeholder, 라벨, 캡션 (`text-muted`) |
-| `--color-muted-2` | `#62666d` | 타임스탬프 등 최저 위계 텍스트 (`text-muted-2`) |
+| `--color-muted-2` | `#6e727a` | 타임스탬프 등 최저 위계 텍스트 (`text-muted-2`) |
 | `--color-brand` | `#5e6ad2` | 프라이머리 CTA 배경 (`bg-brand`) |
 | `--color-accent` | `#7170ff` | 링크, 강조 텍스트 (`text-accent`) |
 | `--color-accent-hover` | `#828fff` | 버튼/링크 hover (`hover:bg-accent-hover`, `hover:text-accent-hover`) |
-| `--color-line` | `rgba(255,255,255,.08)` | 기본 보더 (`border-line`) |
-| `--color-line-subtle` | `rgba(255,255,255,.05)` | 더 옅은 보더, 표 구분선 (`divide-line-subtle`) |
+| `--color-line` | `rgba(255,255,255,.10)` | 기본 보더 (`border-line`) |
+| `--color-line-subtle` | `rgba(255,255,255,.06)` | 더 옅은 보더, 표 구분선 (`divide-line-subtle`) |
 | `--color-error` | `#ff4b4b` | 에러/검증 실패 (`text-error`, `bg-error/10`, `border-error/20`) |
-| `--background` / `--foreground` | `#08090a` / `#f7f8f8` | canvas/fg와 동일 값, `<body>` 기본 배경·글자색용 별도 변수 |
+| `--background` / `--foreground` | `#14161a` / `#f7f8f8` | canvas/fg와 동일 값, `<body>` 기본 배경·글자색용 별도 변수 |
 
 라이트/다크 테마 전환 로직 없음 — `prefers-color-scheme` 미디어쿼리도, 테마 토글도
 코드에 없다. 다크 전용 고정 팔레트다.

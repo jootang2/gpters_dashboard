@@ -6,7 +6,7 @@
   hardcoding colors, so the whole app stays visually consistent.
 */
 :root {
-  --background: #08090a;
+  --background: #14161a;
   --foreground: #f7f8f8;
 }
 
@@ -16,20 +16,26 @@
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 
-  /* linear.app-derived brand tokens */
-  --color-canvas: #08090a;
-  --color-panel: #0f1011;
-  --color-surface: rgba(255, 255, 255, 0.05);
-  --color-surface-strong: rgba(255, 255, 255, 0.08);
+  /*
+    linear.app-derived brand tokens.
+    캔버스/패널은 원래 linear 원본값(#08090a / #0f1011)이었으나 "너무 어둡다"는
+    요청으로 한 단계 밝은 근흑으로 올렸다(2026-09-04). 캔버스가 밝아진 만큼
+    반투명 표면·보더도 함께 올려야 카드가 배경에서 분리돼 보이므로 같이 조정한다.
+    muted-2 는 캔버스 대비가 떨어져(3.44 → 3.16) 캡션이 묻히길래 함께 올렸다.
+  */
+  --color-canvas: #14161a;
+  --color-panel: #1c1f24;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-surface-strong: rgba(255, 255, 255, 0.10);
   --color-fg: #f7f8f8;
   --color-text-secondary: #d0d6e0;
   --color-muted: #8a8f98;
-  --color-muted-2: #62666d;
+  --color-muted-2: #6e727a;
   --color-brand: #5e6ad2;
   --color-accent: #7170ff;
   --color-accent-hover: #828fff;
-  --color-line: rgba(255, 255, 255, 0.08);
-  --color-line-subtle: rgba(255, 255, 255, 0.05);
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-line-subtle: rgba(255, 255, 255, 0.06);
   --color-error: #ff4b4b;
 }
 

@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-// 다크모드(canvas #08090a) 위에서 대비 검증된 고정 순서 팔레트.
+// 다크모드(canvas #14161a) 위에서 대비 검증된 고정 순서 팔레트.
 // 카테고리(정체성) 인코딩이므로 이 순서를 절대 섞지 않는다 — 값(name) 하나마다
 // 아래 CATEGORY_OPTION_ORDER의 고정 인덱스로만 색을 찾는다(count 크기로 정렬된
 // data 배열의 위치를 절대 색 인덱스로 쓰지 않음). 그래야 필터로 응답 수/순위가
@@ -135,8 +135,8 @@ export default function DashboardPage() {
             <p className="text-muted text-sm mb-8 leading-relaxed">
               설문 응답이 들어오면<br />여기서 분석 결과를 확인할 수 있어요.
             </p>
-            <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors">
-              ← 홈으로
+            <Link href="/courses/gpters" className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors">
+              ← 스터디 홈
             </Link>
           </div>
         </div>
@@ -166,8 +166,8 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-canvas text-fg px-6 py-12">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-2 hover:text-text-secondary transition-colors">
-            ← 홈으로
+          <Link href="/courses/gpters" className="inline-flex items-center gap-1.5 text-sm text-muted-2 hover:text-text-secondary transition-colors">
+            ← 스터디 홈
           </Link>
         </div>
         <div className="text-center mb-12">
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f1011', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#f7f8f8' }}
+                    contentStyle={{ backgroundColor: '#1c1f24', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', color: '#f7f8f8' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -243,16 +243,16 @@ export default function DashboardPage() {
             <h3 className="text-sm text-muted mb-4">{label}</h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={data} layout="vertical">
-                <XAxis type="number" stroke="#62666d" tick={{ fill: '#8a8f98', fontSize: 12 }} />
+                <XAxis type="number" stroke="#6e727a" tick={{ fill: '#8a8f98', fontSize: 12 }} />
                 <YAxis
                   type="category"
                   dataKey="name"
                   width={80}
-                  stroke="#62666d"
+                  stroke="#6e727a"
                   tick={{ fill: '#8a8f98', fontSize: 12 }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f1011', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#f7f8f8' }}
+                  contentStyle={{ backgroundColor: '#1c1f24', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', color: '#f7f8f8' }}
                 />
                 <Bar dataKey="value" fill="#5e6ad2" radius={[0, 4, 4, 0]} />
               </BarChart>

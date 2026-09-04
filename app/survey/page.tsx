@@ -120,8 +120,8 @@ export default function SurveyPage() {
       <div className="w-full max-w-xl">
         {/* 나가기 */}
         <div className="mb-6">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-2 hover:text-text-secondary transition-colors">
-            ← 홈으로
+          <Link href="/courses/gpters" className="inline-flex items-center gap-1.5 text-sm text-muted-2 hover:text-text-secondary transition-colors">
+            ← 스터디 홈
           </Link>
         </div>
 

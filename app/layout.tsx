@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Claude Code 스터디 — 내 업무 자동화 AI팀 만들기",
-  description: "비개발자도 4주면 충분합니다. Claude Code로 나만의 AI팀을 만들어보세요.",
+  title: "송주환 — AX / DX 컨설턴트",
+  description: "업무 자동화를 만들고, 그 방법을 가르칩니다. 강의 과정과 자료 모음.",
 };
 
 export default function RootLayout({

@@ -109,10 +109,10 @@ export default function BoardPage() {
         {/* 상단 네비 */}
         <div className="mb-6">
           <Link
-            href="/"
+            href="/courses/gpters"
             className="inline-flex items-center gap-1.5 text-sm text-muted-2 hover:text-text-secondary transition-colors"
           >
-            ← 홈으로
+            ← 스터디 홈
           </Link>
         </div>
 
