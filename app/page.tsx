@@ -186,9 +186,11 @@ export default function ProfilePage() {
                 )}
               </div>
               <p className="text-fg font-medium mb-2">{course.title}</p>
-              <p className="text-sm text-text-secondary leading-relaxed mb-4">
-                {course.description}
-              </p>
+              {course.description && (
+                <p className="text-sm text-text-secondary leading-relaxed mb-4">
+                  {course.description}
+                </p>
+              )}
               <span className="text-sm text-accent">과정 보기 →</span>
             </Link>
           ))}

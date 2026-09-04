@@ -127,7 +127,7 @@ export default function CurriculumSection({
   return (
     <>
       <section className="px-6 pb-20 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-semibold tracking-tight mb-8 text-fg">커리큘럼</h2>
+        <h2 className="text-2xl font-semibold tracking-tight mb-8 text-fg">일정표</h2>
 
         {error && (
           <p className="mb-6 text-sm text-error bg-error/10 border border-error/20 rounded-lg px-4 py-3">

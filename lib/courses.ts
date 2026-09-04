@@ -28,8 +28,8 @@ export type Course = {
    * 없으면 카드가 org 첫 글자를 딴 모노그램 타일을 대신 그린다.
    */
   logo?: { src: string; width: number; height: number }
-  /** 카드에 보이는 한 줄 설명 */
-  description: string
+  /** 카드에 보이는 한 줄 설명. 없으면 카드/히어로에서 그 줄이 통째로 빠진다 */
+  description?: string
   /**
    * 카드 우측에 보이는 기간 표기. 확정된 일정이 없으면 생략한다
    * (없는 날짜를 지어내지 않는다 — 카드에서 해당 줄이 통째로 빠진다).
@@ -66,13 +66,9 @@ export const COURSES: Course[] = [
     // 출처: Wikimedia Commons 의 공식 워드마크 SVG(단순 도형·문자라 저작권 임계 미달 =
     // 퍼블릭 도메인). next/image 는 SVG 를 기본 차단하므로 PNG 로 변환해 넣었다.
     logo: { src: '/courses/costco.png', width: 223, height: 80 },
-    description:
-      '승인된 도구(AppSheet · Apps Script · Looker Studio · Gemini)로 어디까지 되고 어디서 막히는지를 숫자로 짚고, 입력·저장·처리·표현을 어느 도구에 맡길지 정하는 3시간. 결과물을 대신 만들어 주는 대신 방향을 잡아 드립니다.',
     badge: '3시간 · 길잡이 과정',
-    // 아직 공개할 자료가 없다. 지피터스 1주차 배포 미션을 잠깐 붙여 뒀었지만,
-    // 그건 이 과정 커리큘럼과 맞지 않아 뺐다(원본은 지피터스 과정에 그대로 남아 있다).
-    // 이 과정 자료는 '바이브 코딩' 회차용으로 새로 쓸 예정 — 그때까지는
-    // 페이지가 PLANNED_MATERIALS 로 준비중 카드를 대신 그린다.
+    // 아직 공개할 자료가 없다. 비어 있으면 과정 페이지가 '준비중'만 띄운다.
+    // 자료가 생기면 MATERIALS 에 등록하고 여기에 slug 를 넣으면 된다.
     materialSlugs: [],
   },
 ]

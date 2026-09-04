@@ -3,8 +3,8 @@
 // 과정 메타는 lib/courses.ts 의 COURSES('costco'), 자료는 그 항목의 materialSlugs 가
 // lib/materials.ts 의 MATERIALS 를 가리킨다.
 //
-// 커리큘럼은 지피터스 페이지가 SESSIONS 를 인라인으로 두는 것과 같은 방식으로
-// 이 파일 안에 둔다(레지스트리는 과정 카드용 공통 메타만 담는다).
+// 일정표(커리큘럼)는 course_curriculum 테이블에서 읽어 화면에서 편집한다.
+// 코드 기본값은 lib/curriculum.ts 에 있고, DB 에 행이 없을 때만 쓰인다.
 //
 // 설계 근거 — 담당자(이다연)와 주고받은 사전 확인 내용:
 //   · 참가자 3명, 회사 회의실, 기기는 개인 노트북 하나(자리·기기 전환 없음)
@@ -59,35 +59,6 @@ import CurriculumSection from './CurriculumSection'
 // 새로 그려져야 한다(저장 직후 바로 반영되어야 하므로).
 export const dynamic = 'force-dynamic'
 
-/** 강의 전에 끝나 있어야 하는 것. 하나라도 비면 3시간 안에 결과물이 안 나온다. */
-const PREWORK: { who: string; task: string; why: string }[] = [
-  {
-    who: '담당자',
-    task: '점검 체크리스트 raw data sheet 1개 (문항 목록 + 결과 몇 건. 사업장명·수치는 가짜 값으로)',
-    why: '2부부터 끝까지 이 시트 하나 위에서 움직인다. 없으면 실습이 통째로 멈춘다.',
-  },
-  {
-    who: '참가자',
-    task: '개인 노트북 브라우저에서 회사 계정으로 AppSheet · Apps Script · Looker Studio 로그인 확인',
-    why: '개인 기기에서 사내 계정이 열리는지가 오늘 전체의 전제다. 권한 문제를 현장에서 풀면 30분씩 새어나간다.',
-  },
-  {
-    who: '참가자',
-    task: '개인 노트북에 Claude Code 설치 + 로그인까지 확인',
-    why: '4부에서 Apps Script 코드를 짜는 도구로 쓴다. 설치를 현장에서 하면 실습 시간이 사라진다.',
-  },
-  {
-    who: '담당자',
-    task: '국가법령정보 OPEN API 개발계정 신청 (open.law.go.kr)',
-    why: '승인에 시간이 걸릴 수 있다. 강의 당일에 신청하면 5부에서 호출을 못 해본다.',
-  },
-  {
-    who: '담당자',
-    task: '기존 Apps Script 대시보드 캡처 공유',
-    why: '이미 굴러가는 것 위에 얹을지 새로 만들지를 강의 전에 정해둔다.',
-  },
-]
-
 export default async function CostcoCoursePage() {
   const course = getCourse('costco')!
   const materials = course.materialSlugs
@@ -114,7 +85,6 @@ export default async function CostcoCoursePage() {
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight mb-6">
           {course.title}
         </h1>
-        <p className="text-lg text-text-secondary leading-relaxed">{course.description}</p>
       </section>
 
       {/* 개요 */}
@@ -137,25 +107,7 @@ export default async function CostcoCoursePage() {
         </div>
       </section>
 
-      {/* 사전 준비 */}
-      <section className="px-6 pb-20 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-semibold tracking-tight mb-8 text-fg">강의 전 준비</h2>
-        <ul className="backdrop-blur-sm bg-surface border border-line rounded-2xl p-6 divide-y divide-line-subtle">
-          {PREWORK.map((p) => (
-            <li key={p.task} className="py-4 first:pt-0 last:pb-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand/20 border border-accent/40 text-accent">
-                  {p.who}
-                </span>
-                <span className="text-sm text-fg font-medium">{p.task}</span>
-              </div>
-              <p className="text-sm text-muted leading-relaxed">{p.why}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* 커리큘럼 — 표시와 관리자 편집을 클라이언트 컴포넌트가 맡는다 */}
+      {/* 일정표 — 표시와 관리자 편집을 클라이언트 컴포넌트가 맡는다 */}
       <CurriculumSection courseSlug="costco" initialBlocks={curriculum} />
 
       {/* 강의자료 — 아직 올릴 자료가 없으면 '준비중'만 띄운다 */}
